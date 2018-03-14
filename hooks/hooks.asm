@@ -16,16 +16,22 @@ KeyHook_start:
 	push	af
 	call	_os_ClearStatusBarLow
 	res	0, (iy-41h)
-	pop	af
-	cp	a, kTrace
-	ret	nz
+; Stupid OS, we need to copy it to safe RAM, because the OS clears progToEdit when opening another OS context
 	ld	a, (progToEdit)
 	or	a, a
 	jr	z, +_
-; Stupid OS, we need to copy it to safe RAM, because the OS clears progToEdit when opening another OS context
 	ld	de, saveSScreen
 	ld	hl, progToEdit
 	call	_Mov9b
+_:	pop	af
+	cp	a, kTrace
+	jr	z, +_
+	cp	a, kGraph
+	ret	nz
+	ld	de, DisplayPalette
+	ld	hl, (rawKeyHookPtr)
+	add	hl, de
+	jp	(hl)
 _:	call	_CursorOff
 	ld	d, 0
 DisplayTabWithTokens:
@@ -127,7 +133,7 @@ KeyNotUp:
 	cp	a, skDown
 	jr	nz, KeyNotDown
 	ld	a, d
-	cp	a, 7
+	cp	a, 8
 	ld	a, e
 	jr	nz, +_
 	cp	a, (AMOUNT_OF_CUSTOM_TOKENS + AMOUNT_OF_GRAPHX_FUNCTIONS + AMOUNT_OF_FILEIOC_FUNCTIONS)%16 - 1
@@ -263,9 +269,75 @@ ReturnToEditor:
 	inc	a			;    reset zero flag
 	ld	a, 0
 	ret
+	
+DisplayPalette:
+	call	_RunIndicOff
+	ld	hl, vRAM
+	push	hl
+	ld	(hl), 0FFh
+	push	hl
+	pop	de
+	inc	de
+	ld	bc, 320 * 240 * 2 - 1
+	ldir
+	pop	hl
+	ld	b, 0
+DisplaySquare:
+	ld	c, 15
+DisplaySquareRowLoop:
+	ld	a, 15
+	ld	de, (320 - 15) * 2
+DisplaySquareRowInnerLoop:
+	ld	(hl), b
+	inc	hl
+	ld	(hl), b
+	inc	hl
+	dec	a
+	jr	nz, DisplaySquareRowInnerLoop
+	add	hl, de
+	dec	c
+	jr	nz, DisplaySquareRowLoop
+	inc	b
+	jr	z, StopDisplayingPalette
+	ld	a, b
+	and	a, 000001111b
+	jr	nz, +_
+	ld	de, ((-15 * 16) + (15 * 320)) * 2
+	add	hl, de
+_:	ld	de, (-15 * 320 + 15) * 2
+	add	hl, de
+	jr	DisplaySquare
+StopDisplayingPalette:
+	ld	de, (rawKeyHookPtr)
+	push	de
+	push	de
+	ld	hl, 242
+	ld.sis	(penCol & 0FFFFh), hl
+	push	hl
+	ld	a, 10
+	ld	(penRow), a
+	ld	hl, ColorText1
+	add	hl, de
+	call	_VPutS
+	pop	hl
+	ld.sis	(penCol & 0FFFFh), hl
+	ld	a, 24
+	ld	(penRow), a
+	pop	de
+	ld	hl, ColorText2
+	add	hl, de
+	call	_VPutS
+_:	call	_GetCSC
+	or	a, a
+	jr	z, -_
+	call	_DrawStatusBar
+	pop	de
+	ld	hl, BufferSearch
+	add	hl, de
+	jp	(hl)
 KeyHook_end:
 
-.echo "Key hook: ",$-KeyHook_start, " bytes"
+.echo $-KeyHook_start
 
 TokenHook_start:
 	.db	83h
@@ -289,7 +361,7 @@ TokenHook_start:
 	ret
 TokenHook_end:
 
-.echo "Token hook: ",$-TokenHook_start, " bytes"
+.echo $-TokenHook_start
 
 CursorHook_start:
 	.db	83h
@@ -438,7 +510,7 @@ F20:	.db "Detect(", 014h, "PTR,DATA)", 0
 Tab3:
 F21:	.db "DetectVar(", 014h, "PTR,DATA,TYPE)", 0
 F22:	.db "SetVar(TYPE,NAME,DATA)", 0
-F23:	.db "StoVar(TYPE_OUT,PTR_OUT,TYPE_IN,PTR_OUT)", 0
+F23:	.db "StoVar(TYPE_O,PTR_O,TYPE_I,PTR_I)", 0
 F24:	.db "RclVar(TYPE,NAME,PTR)", 0
 
 G01:	.db "Begin()", 0
@@ -585,5 +657,9 @@ CustomTokensPointers:
 
 ProgramText:
 	.db "PROGRAM:", 0
+ColorText1:
+	.db "COLOR=", 0
+ColorText2:
+	.db "16ROW+COL", 0
 
 Hooks_end:
