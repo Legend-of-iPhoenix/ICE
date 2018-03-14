@@ -4,6 +4,10 @@
 #define AMOUNT_OF_GRAPHX_FUNCTIONS 93
 #define AMOUNT_OF_FILEIOC_FUNCTIONS 24
 
+#define SQUARE_WIDTH 18
+#define SWUARE_HEIGHT 13
+#define SQUARES_START_POS 30
+
 KeyHook_start:
 	.db	83h
 	or	a, a
@@ -272,21 +276,34 @@ ReturnToEditor:
 	
 DisplayPalette:
 	call	_RunIndicOff
-	ld	hl, vRAM
-	push	hl
-	ld	(hl), 0FFh
-	push	hl
-	pop	de
-	inc	de
-	ld	bc, 320 * 240 * 2 - 1
-	ldir
-	pop	hl
+	call	boot_ClearVRAM
+; Display the header strings
+	ld	hl, 120
+	ld	(penCol), hl
+	ld	a, 1
+	ld	(penRow), a
+	ld	de, (rawKeyHookPtr)
+	ld	hl, ColorText
+	add	hl, de
+	call	_VPutS
+	ld	hl, SQUARES_START_POS + 6
+	ld	(penCol), hl
+	ld	a, 14
+	ld	(penRow), a
+	push	de
+	ld	hl, ColumnHeaderText
+	add	hl, de
+	call	_VPutS
+	ld	hl, vRAM + ((SQUARES_START_POS * lcdWidth + SQUARES_START_POS) * 2)
 	ld	b, 0
-DisplaySquare:
-	ld	c, 15
+; Display all the squares
+DisplaySquaresRows:
+; Display the entire square
+	ld	c, SWUARE_HEIGHT
 DisplaySquareRowLoop:
-	ld	a, 15
-	ld	de, (320 - 15) * 2
+; Display one row of a square
+	ld	a, SQUARE_WIDTH
+	ld	de, (lcdWidth - SQUARE_WIDTH) * 2
 DisplaySquareRowInnerLoop:
 	ld	(hl), b
 	inc	hl
@@ -298,35 +315,58 @@ DisplaySquareRowInnerLoop:
 	dec	c
 	jr	nz, DisplaySquareRowLoop
 	inc	b
-	jr	z, StopDisplayingPalette
 	ld	a, b
 	and	a, 000001111b
-	jr	nz, +_
-	ld	de, ((-15 * 16) + (15 * 320)) * 2
-	add	hl, de
-_:	ld	de, (-15 * 320 + 15) * 2
-	add	hl, de
-	jr	DisplaySquare
-StopDisplayingPalette:
-	ld	de, (rawKeyHookPtr)
-	push	de
-	push	de
-	ld	hl, 242
-	ld.sis	(penCol & 0FFFFh), hl
+	jr	nz, DontAddNewRow
+; We need to switch to the next row = update pointer + display index in front of row
+; (Index / 16) * 13 + 30 = Y pos
+	ld	a, b
+	sub	a, 16
 	push	hl
-	ld	a, 10
+	ld	e, a
+	push	bc
+	or	a, a
+	rra
+	rra
+	rra
+	rra
+	ld	b, a
+	ld	c, SQUARE_HEIGHT
+	mlt	bc
+	ld	a, SQUARES_START_POS
+	add	a, c
 	ld	(penRow), a
-	ld	hl, ColorText1
+; Do some magic stuff to get X pos
+	ld	a, e
+	ld	hl, 4
+	cp	a, 100
+	jr	nc, +_
+	ld	de, 8
 	add	hl, de
-	call	_VPutS
+	cp	a, 10
+	jr	nc, +_
+	dec	de
+	dec	de
+	add	hl, de
+_:	ld	(penCol), hl
+	or	a, a
+	sbc	hl, hl
+	ld	l, a
+	ld	b, 3
+	call	_VDispHL
+	pop	bc
 	pop	hl
-	ld.sis	(penCol & 0FFFFh), hl
-	ld	a, 24
-	ld	(penRow), a
-	pop	de
-	ld	hl, ColorText2
+; Set pointer to new row
+	ld	de, ((-SQUARE_WIDTH * 16) + (SWUARE_HEIGHT * lcdWidth)) * 2
 	add	hl, de
-	call	_VPutS
+DontAddNewRow:
+; Add square to pointer
+	ld	de, (-SWUARE_HEIGHT * lcdWidth + SQUARE_WIDTH) * 2
+	add	hl, de
+	ld	a, b
+	or	a, a
+	jr	nz, DisplaySquaresRows
+; Done, wait and return
 _:	call	_GetCSC
 	or	a, a
 	jr	z, -_
@@ -657,9 +697,24 @@ CustomTokensPointers:
 
 ProgramText:
 	.db "PROGRAM:", 0
-ColorText1:
-	.db "COLOR=", 0
-ColorText2:
-	.db "16ROW+COL", 0
+ColorText:
+	.db "COLOR=COL+ROW", 0
+ColumnHeaderText:
+	.db "0", 0EFh
+	.db "1", 0EFh
+	.db "2", 0EFh
+	.db "3", 0EFh
+	.db "4", 0EFh
+	.db "5", 0EFh
+	.db "6", 0EFh
+	.db "7", 0EFh
+	.db "8", 0EFh
+	.db "9", 0EEh
+	.db "10", " "
+	.db "11", " "
+	.db "12", " "
+	.db "13", " "
+	.db "14", " "
+	.db "15", 0
 
 Hooks_end:

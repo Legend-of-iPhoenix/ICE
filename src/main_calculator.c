@@ -38,6 +38,9 @@ void main(void) {
     // Install hooks
     ti_CloseAll();
     ice.inPrgm = ti_Open("ICEAPPV", "r");
+    
+    asm("ld iy, 0D00080h");
+    asm("set 3, (iy+024h)");
 
     if (ice.inPrgm) {
         ti_SetArchiveStatus(true, ice.inPrgm);
@@ -47,16 +50,13 @@ void main(void) {
         asm("ld de, 17");
         asm("add hl, de");
         asm("call 00213CCh");
-        asm("ld de, 638");
+        asm("ld de, 707");
         asm("add hl, de");
         asm("call 00213F8h");
         asm("ld de, 32");
         asm("add hl, de");
         asm("call 00213C4h");
     }
-
-    asm("ld iy, 0D00080h");
-    asm("set 3, (iy+024h)");
 
     // Yay, GUI! :)
     displayMainScreen:
