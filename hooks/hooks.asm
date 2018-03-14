@@ -5,7 +5,7 @@
 #define AMOUNT_OF_FILEIOC_FUNCTIONS 24
 
 #define SQUARE_WIDTH 18
-#define SWUARE_HEIGHT 13
+#define SQUARE_HEIGHT 13
 #define SQUARES_START_POS 30
 
 KeyHook_start:
@@ -299,7 +299,7 @@ DisplayPalette:
 ; Display all the squares
 DisplaySquaresRows:
 ; Display the entire square
-	ld	c, SWUARE_HEIGHT
+	ld	c, SQUARE_HEIGHT
 DisplaySquareRowLoop:
 ; Display one row of a square
 	ld	a, SQUARE_WIDTH
@@ -357,11 +357,11 @@ _:	ld	(penCol), hl
 	pop	bc
 	pop	hl
 ; Set pointer to new row
-	ld	de, ((-SQUARE_WIDTH * 16) + (SWUARE_HEIGHT * lcdWidth)) * 2
+	ld	de, ((-SQUARE_WIDTH * 16) + (SQUARE_HEIGHT * lcdWidth)) * 2
 	add	hl, de
 DontAddNewRow:
 ; Add square to pointer
-	ld	de, (-SWUARE_HEIGHT * lcdWidth + SQUARE_WIDTH) * 2
+	ld	de, (-SQUARE_HEIGHT * lcdWidth + SQUARE_WIDTH) * 2
 	add	hl, de
 	ld	a, b
 	or	a, a
