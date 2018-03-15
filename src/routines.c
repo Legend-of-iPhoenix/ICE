@@ -63,8 +63,6 @@ void preScanProgram(void) {
                 prescan.amountOfInputRoutines++;
             } else if (tok == tPause) {
                 prescan.amountOfPauseRoutines++;
-            } else if (tok == tSin || tok == tCos) {
-                prescan.amountOfSinCosRoutines++;
             } else if (tok == tVarLst) {
                 if (!prescan.OSLists[token = _getc()]) {
                     prescan.OSLists[token] = pixelShadow + 2000 * (prescan.amountOfOSVarsUsed++);
@@ -88,6 +86,10 @@ void preScanProgram(void) {
                 } else if (tok == tRandInt) {
                     prescan.amountOfRandRoutines++;
                     prescan.modifiedIY = true;
+                }
+            } else if (tok == tExtTok) {
+                if ((tok = (uint8_t)_getc()) == tStartTmr) {
+                    prescan.amountOfTimerRoutines++;
                 }
             } else if (tok == tDet || tok == tSum) {
                 uint8_t tok1 = _getc();
@@ -444,19 +446,24 @@ bool CheckEOL(void) {
     return false;
 }
 
-void CallRoutine(bool *routineBool, uint24_t *routineAddress, const uint8_t *routineData, uint8_t routineLength) {
-    // Store the pointer to the call to the stack, to replace later
-    ProgramPtrToOffsetStack();
+void CallRoutine(bool *routineBool, uint24_t *routineAddress, const uint8_t *routineData, uint8_t routineLength, uint8_t amountOfRoutine) {
+    if (amountOfRoutine == 1) {
+        memcpy(ice.programPtr, routineData, routineLength);
+        ice.programPtr += routineLength - 1;        // Don't move the "ret"
+    } else {
+        // Store the pointer to the call to the stack, to replace later
+        ProgramPtrToOffsetStack();
 
-    // We need to add the routine to the data section
-    if (!*routineBool) {
-        ice.programDataPtr -= routineLength;
-        *routineAddress = (uintptr_t)ice.programDataPtr;
-        memcpy(ice.programDataPtr, routineData, routineLength);
-        *routineBool = true;
+        // We need to add the routine to the data section
+        if (!*routineBool) {
+            ice.programDataPtr -= routineLength;
+            *routineAddress = (uintptr_t)ice.programDataPtr;
+            memcpy(ice.programDataPtr, routineData, routineLength);
+            *routineBool = true;
+        }
+
+        CALL(*routineAddress);
     }
-
-    CALL(*routineAddress);
 }
 
 uint8_t GetVariableOffset(uint8_t tok) {

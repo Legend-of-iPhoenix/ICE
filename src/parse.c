@@ -1628,7 +1628,7 @@ static uint8_t functionPause(int token) {
         }
         AnsToHL();
 
-        CallRoutine(&ice.usedAlreadyPause, &ice.PauseAddr, (uint8_t*)PauseData, SIZEOF_PAUSE_DATA);
+        CallRoutine(&ice.usedAlreadyPause, &ice.PauseAddr, (uint8_t*)PauseData, SIZEOF_PAUSE_DATA, prescan.amountOfPauseRoutines);
         reg.HLIsNumber = reg.DEIsNumber = true;
         reg.HLIsVariable = reg.DEIsVariable = false;
         reg.HLValue = reg.DEValue = -1;
@@ -1639,7 +1639,8 @@ static uint8_t functionPause(int token) {
 }
 
 static uint8_t functionInput(int token) {
-    uint8_t tok, res;
+    uint8_t tok, res, var;
+    bool onlyOnce = prescan.amountOfInputRoutines == 1;
 
     expr.inFunction = true;
     if ((res = parseExpression(_getc())) != VALID) {
@@ -1651,13 +1652,11 @@ static uint8_t functionInput(int token) {
         if ((res = parseExpression(_getc())) != VALID) {
             return res;
         }
-        *(ice.programPtr - 3) = 0x3E;
-        *(ice.programPtr - 2) = *(ice.programPtr - 1);
-        ice.programPtr--;
+        var = *(ice.programPtr - 1);
+        ice.programPtr -= 3;
     } else {
-        *(ice.programPtr - 3) = 0x3E;
-        *(ice.programPtr - 2) = *(ice.programPtr - 1);
-        ice.programPtr--;
+        var = *(ice.programPtr - 1);
+        ice.programPtr -= 3;
 
         // FF0000 reads all zeroes, and that's important
         LD_HL_IMM(0xFF0000);
@@ -1668,22 +1667,31 @@ static uint8_t functionInput(int token) {
     }
 
     MaybeLDIYFlags();
+    
+    if (prescan.amountOfInputRoutines == 1) {
+        memcpy(ice.programPtr, InputData, SIZEOF_INPUT_DATA);
+        ice.programPtr += SIZEOF_INPUT_DATA;
+        *(ice.programPtr - 5) = var;
+        *(ice.programPtr - 4) = OP_CALL;
+    } else {
+        LD_A_IND_IX_OFF(var);
+        
+        // Copy the Input routine to the data section
+        if (!ice.usedAlreadyInput) {
+            ice.programDataPtr -= SIZEOF_INPUT_DATA;
+            ice.InputAddr = (uintptr_t)ice.programDataPtr;
+            memcpy(ice.programDataPtr, (uint8_t*)InputData, SIZEOF_INPUT_DATA);
+            ice.usedAlreadyInput = true;
+        }
 
-    // Copy the Input routine to the data section
-    if (!ice.usedAlreadyInput) {
-        ice.programDataPtr -= SIZEOF_INPUT_DATA;
-        ice.InputAddr = (uintptr_t)ice.programDataPtr;
-        memcpy(ice.programDataPtr, (uint8_t*)InputData, SIZEOF_INPUT_DATA);
-        ice.usedAlreadyInput = true;
+        // Set which var we need to store to
+        ProgramPtrToOffsetStack();
+        LD_ADDR_A(ice.InputAddr + SIZEOF_INPUT_DATA - 5);
+
+        // Call the right routine
+        ProgramPtrToOffsetStack();
+        CALL(ice.InputAddr);
     }
-
-    // Set which var we need to store to
-    ProgramPtrToOffsetStack();
-    LD_ADDR_A(ice.InputAddr + SIZEOF_INPUT_DATA - 5);
-
-    // Call the right routine
-    ProgramPtrToOffsetStack();
-    CALL(ice.InputAddr);
     ResetAllRegs();
 
     return VALID;

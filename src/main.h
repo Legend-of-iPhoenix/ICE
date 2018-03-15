@@ -161,10 +161,6 @@ typedef struct {
     uint8_t  amountOfMeanRoutines;
     uint8_t  amountOfInputRoutines;
     uint8_t  amountOfPauseRoutines;
-    uint8_t  amountOfSinCosRoutines;
-    uint8_t  amountOfLoadSpriteRoutines;
-    uint8_t  amountOfLoadTilemapRoutines;
-    uint8_t  amountOfMallocRoutines;
     uint8_t  amountOfTimerRoutines;
     uint8_t  amountOfOSVarsUsed;
 

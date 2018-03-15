@@ -209,7 +209,7 @@ uint8_t parseFunction(uint24_t index) {
 
     // startTmr
     else if (function == tExtTok && function2 == tStartTmr) {
-        CallRoutine(&ice.usedAlreadyTimer, &ice.TimerAddr, (uint8_t*)TimerData, SIZEOF_TIMER_DATA);
+        CallRoutine(&ice.usedAlreadyTimer, &ice.TimerAddr, (uint8_t*)TimerData, SIZEOF_TIMER_DATA, prescan.amountOfTimerRoutines);
     }
 
     // checkTmr(
@@ -280,7 +280,7 @@ uint8_t parseFunction(uint24_t index) {
                 }
             }
 
-            CallRoutine(&ice.usedAlreadyGetKeyFast, &ice.getKeyFastAddr, (uint8_t*)KeypadData, SIZEOF_KEYPAD_DATA);
+            CallRoutine(&ice.usedAlreadyGetKeyFast, &ice.getKeyFastAddr, (uint8_t*)KeypadData, SIZEOF_KEYPAD_DATA, 0);
             ResetReg(REGISTER_HL);
             ResetReg(REGISTER_A);
         } else {
@@ -347,7 +347,7 @@ uint8_t parseFunction(uint24_t index) {
             return res;
         }
 
-        CallRoutine(&ice.usedAlreadySqrt, &ice.SqrtAddr, (uint8_t*)SqrtData, SIZEOF_SQRT_DATA);
+        CallRoutine(&ice.usedAlreadySqrt, &ice.SqrtAddr, (uint8_t*)SqrtData, SIZEOF_SQRT_DATA, prescan.amountOfSqrtRoutines);
         ResetAllRegs();
 
         expr.outputReturnRegister = REGISTER_DE;
@@ -403,7 +403,7 @@ uint8_t parseFunction(uint24_t index) {
             return res;
         }
 
-        CallRoutine(&ice.usedAlreadyMean, &ice.MeanAddr, (uint8_t*)MeanData, SIZEOF_MEAN_DATA);
+        CallRoutine(&ice.usedAlreadyMean, &ice.MeanAddr, (uint8_t*)MeanData, SIZEOF_MEAN_DATA, prescan.amountOfMeanRoutines);
         ResetReg(REGISTER_HL);
     }
 
@@ -1402,7 +1402,7 @@ void loadGetKeyFastData2(void) {
 void InsertMallocRoutine(void) {
     bool boolUsed = ice.usedAlreadyMalloc;
 
-    CallRoutine(&ice.usedAlreadyMalloc, &ice.MallocAddr, (uint8_t*)MallocData, SIZEOF_MALLOC_DATA);
+    CallRoutine(&ice.usedAlreadyMalloc, &ice.MallocAddr, (uint8_t*)MallocData, SIZEOF_MALLOC_DATA, 0);
     *(uint24_t*)(ice.MallocAddr + 1) = ice.freeMemoryPtr;
 
     if (!boolUsed) {

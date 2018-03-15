@@ -78,7 +78,10 @@ int main(int argc, char **argv) {
         goto stop;
     }
     
-    _getc();
+    if (_getc() != 0x2C) {
+        fprintf(stderr, "Error: not an ICE program\n");
+        goto stop;
+    }
     outputPrgm = GetProgramName();
     if (outputPrgm->errorCode != VALID) {
         displayError(outputPrgm->errorCode);

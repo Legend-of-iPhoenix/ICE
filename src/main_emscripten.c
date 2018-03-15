@@ -56,7 +56,9 @@ int main(int argc, char **argv) {
         goto stop;
     }
     
-    _getc();
+    if (_getc() != 0x2C) {
+        return 1;
+    }
     outputPrgm = GetProgramName();
     if (outputPrgm->errorCode != VALID) {
         displayError(outputPrgm->errorCode);
