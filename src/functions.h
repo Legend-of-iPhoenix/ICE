@@ -22,10 +22,10 @@
 #define SMALL_34      (SMALL_3 | SMALL_4)
 #define SMALL_345     (SMALL_3 | SMALL_45)
 
-uint8_t parseFunction(uint24_t);
-uint8_t parseFunction1Arg(uint24_t, uint8_t);
-uint8_t parseFunction2Args(uint24_t, uint8_t, bool);
-uint8_t InsertDataElements(uint8_t, uint24_t, uint8_t, uint8_t);
+uint8_t parseFunction(uint24_t index);
+uint8_t parseFunction1Arg(uint24_t index, uint8_t outputRegister1);
+uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, bool orderDoesMatter);
+uint8_t InsertDataElements(uint8_t amountOfArguments, uint24_t startIndex, uint8_t dataSize, uint8_t startA);
 void loadGetKeyFastData1(void);
 void loadGetKeyFastData2(void);
 void InsertMallocRoutine(void);

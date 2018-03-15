@@ -13,11 +13,11 @@
 #define TempString1 0
 #define TempString2 1
 
-bool comparePtrToTempStrings(uint24_t);
-uint8_t getIndexOfOperator(uint8_t);
-uint24_t executeOperator(uint24_t, uint24_t, uint8_t);
-void LD_HL_STRING(uint24_t, uint8_t);
-uint8_t parseOperator(element_t*, element_t*, element_t*, element_t*, bool);
+bool comparePtrToTempStrings(uint24_t addr);
+uint8_t getIndexOfOperator(uint8_t _operator);
+uint24_t executeOperator(uint24_t operand1, uint24_t operand2, uint8_t operator);
+void LD_HL_STRING(uint24_t stringPtr, uint8_t type);
+uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr, bool canOptimizeStrings);
 
 void StoToChainAns(void);
 void EQInsert(void);
@@ -27,7 +27,7 @@ void StoStringString(void);
 void StoStringVariable(void);
 void StoStringChainAns(void);
 
-void MultWithNumber(uint24_t, uint8_t*, bool);
+void MultWithNumber(uint24_t num, uint8_t *programPtr, bool ChangeRegisters);
 
 extern const char operators[];
 extern const uint8_t operatorPrecedence[];

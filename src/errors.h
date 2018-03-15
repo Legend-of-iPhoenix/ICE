@@ -26,7 +26,6 @@
 #define VALID              255
 
 void displayLabelError(char *label);
-void displayError(uint8_t);
-void PrintChar(char);
+void displayError(uint8_t index);
 
 #endif

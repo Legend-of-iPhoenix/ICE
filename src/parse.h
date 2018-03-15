@@ -18,14 +18,14 @@
 #define TYPE_MASK_U16        1
 #define TYPE_MASK_U24        2
 
-uint8_t JumpForward(uint8_t*, uint8_t*, uint24_t, uint8_t, uint8_t);
-uint8_t JumpBackwards(uint8_t*, uint8_t);
+uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffsetElements, uint8_t tempGotoElements, uint8_t tempLblElements);
+uint8_t JumpBackwards(uint8_t *startAddr, uint8_t whichOpcode);
 void optimizeZeroCarryFlagOutput(void);
 void skipLine(void);
 void insertGotoLabel(void);
 
-uint8_t parsePostFixFromIndexToIndex(uint24_t, uint24_t);
-uint8_t functionRepeat(int);
+uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex);
+uint8_t functionRepeat(int token);
 uint8_t parseProgram(void);
 
 typedef struct {
