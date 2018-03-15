@@ -338,10 +338,10 @@ DisplaySquareRowInnerLoop:
 	ld	(penRow), a
 ; Do some magic stuff to get X pos
 	ld	a, e
+	ld	de, 8
 	ld	hl, 4
 	cp	a, 100
 	jr	nc, +_
-	ld	de, 8
 	add	hl, de
 	cp	a, 10
 	jr	nc, +_
@@ -349,16 +349,15 @@ DisplaySquareRowInnerLoop:
 	dec	de
 	add	hl, de
 _:	ld	(penCol), hl
-	or	a, a
-	sbc	hl, hl
-	ld	l, a
+	ld	e, a
+	ex	de, hl
 	ld	b, 3
 	call	_VDispHL
 	pop	bc
 	pop	hl
 ; Set pointer to new row
-	ld	de, ((-SQUARE_WIDTH * 16) + (SQUARE_HEIGHT * lcdWidth)) * 2
-	add	hl, de
+	ld	de, (-SQUARE_WIDTH * 15) * 2
+	jr	$+6
 DontAddNewRow:
 ; Add square to pointer
 	ld	de, (-SQUARE_HEIGHT * lcdWidth + SQUARE_WIDTH) * 2
