@@ -50,7 +50,7 @@ void main(void) {
         asm("ld de, 17");
         asm("add hl, de");
         asm("call 00213CCh");
-        asm("ld de, 707");
+        asm("ld de, 689");
         asm("add hl, de");
         asm("call 00213F8h");
         asm("ld de, 32");

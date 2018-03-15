@@ -276,7 +276,7 @@ ReturnToEditor:
 	
 DisplayPalette:
 	call	_RunIndicOff
-	call	boot_ClearVRAM
+	call	_boot_ClearVRAM
 ; Display the header strings
 	ld	hl, 120
 	ld	(penCol), hl
