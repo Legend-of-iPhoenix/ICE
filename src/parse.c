@@ -62,8 +62,6 @@ const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4] = {
 };
 element_t outputStack[400];
 element_t stack[200];
-label_t labelStack[150];
-label_t gotoStack[150];
 variable_t variableStack[85];
 
 uint8_t parseProgram(void) {
@@ -920,8 +918,8 @@ static uint8_t functionI(int token) {
 
 static uint8_t functionIf(int token) {
     uint8_t *IfElseAddr = NULL;
-    uint8_t tempGotoElements = ice.amountOfGotos;
-    uint8_t tempLblElements = ice.amountOfLbls;
+    uint8_t tempGotoElements = prescan.amountOfGotos;
+    uint8_t tempLblElements = prescan.amountOfLbls;
 
     if ((token = _getc()) != EOF && token != tEnter) {
         uint8_t *IfStartAddr, res;
@@ -961,8 +959,8 @@ static uint8_t functionIf(int token) {
         // Check if we quit the program with an 'Else'
         if (res == E_ELSE) {
             bool shortElseCode;
-            uint8_t tempGotoElements2 = ice.amountOfGotos;
-            uint8_t tempLblElements2 = ice.amountOfLbls;
+            uint8_t tempGotoElements2 = prescan.amountOfGotos;
+            uint8_t tempLblElements2 = prescan.amountOfLbls;
             uint24_t tempDataOffsetElements2;;
 
             // Backup stuff
@@ -1017,8 +1015,8 @@ uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffse
         uint8_t *tempPtr = startAddr;
         uint8_t opcode = *startAddr;
         uint24_t tempForLoopSMCElements = ice.ForLoopSMCElements;
-        label_t *labelPtr = labelStack;
-        label_t *gotoPtr = gotoStack;
+        label_t *labelPtr = ice.LblStack;
+        label_t *gotoPtr = ice.GotoStack;
 
         *startAddr++ = opcode - 0xA2 - (opcode == 0xC3 ? 9 : 0);
         *startAddr++ = endAddr - tempPtr - 4;
@@ -1035,11 +1033,11 @@ uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffse
         }
 
         // Update Goto and Lbl addresses, decrease them all with 2
-        while (ice.amountOfGotos != tempGotoElements) {
+        while (prescan.amountOfGotos != tempGotoElements) {
             (&gotoPtr[tempGotoElements])->addr -= 2;
             tempGotoElements++;
         }
-        while (ice.amountOfLbls != tempLblElements) {
+        while (prescan.amountOfLbls != tempLblElements) {
             (&labelPtr[tempLblElements])->addr -= 2;
             tempLblElements++;
         }
@@ -1085,8 +1083,8 @@ bool WhileJumpBackwardsLarge;
 
 static uint8_t functionWhile(int token) {
     uint24_t tempDataOffsetElements = ice.dataOffsetElements;
-    uint8_t tempGotoElements = ice.amountOfGotos;
-    uint8_t tempLblElements = ice.amountOfLbls;
+    uint8_t tempGotoElements = prescan.amountOfGotos;
+    uint8_t tempLblElements = prescan.amountOfLbls;
     uint8_t *WhileStartAddr = ice.programPtr, res;
     uint8_t *WhileRepeatCondStartTemp = WhileRepeatCondStart;
     bool WhileJumpForwardSmall;
@@ -1360,8 +1358,8 @@ static uint8_t functionClrHome(int token) {
 static uint8_t functionFor(int token) {
     bool endPointIsNumber = false, stepIsNumber = false, reversedCond = false, smallCode;
     uint24_t endPointNumber = 0, stepNumber = 0, tempDataOffsetElements;
-    uint8_t tempGotoElements = ice.amountOfGotos;
-    uint8_t tempLblElements = ice.amountOfLbls;
+    uint8_t tempGotoElements = prescan.amountOfGotos;
+    uint8_t tempLblElements = prescan.amountOfLbls;
     uint8_t *endPointExpressionValue = 0, *stepExpression = 0, *jumpToCond, *loopStart;
     uint8_t tok, variable, res;
 
@@ -1572,8 +1570,7 @@ static uint8_t functionCustom(int token) {
 
 static uint8_t functionLbl(int token) {
     // Add the label to the stack, and skip the line
-    label_t *labelPtr = labelStack;
-    label_t *labelCurr = &labelPtr[ice.amountOfLbls++];
+    label_t *labelCurr = &ice.LblStack[ice.curLbl++];
     uint8_t a = 0;
 
     // Get the label name
@@ -1582,7 +1579,7 @@ static uint8_t functionLbl(int token) {
     }
     labelCurr->name[a] = 0;
     labelCurr->addr = (uint24_t)ice.programPtr;
-    labelCurr->LblGotoElements = ice.amountOfLbls;
+    labelCurr->LblGotoElements = prescan.amountOfLbls;
     ResetAllRegs();
 
     return VALID;
@@ -1597,8 +1594,7 @@ static uint8_t functionGoto(int token) {
 
 void insertGotoLabel(void) {
     // Add the label to the stack, and skip the line
-    label_t *gotoPtr = gotoStack;
-    label_t *gotoCurr = &gotoPtr[ice.amountOfGotos++];
+    label_t *gotoCurr = &ice.GotoStack[ice.curGoto++];
     uint8_t a = 0;
     int token;
 
@@ -1609,7 +1605,7 @@ void insertGotoLabel(void) {
     gotoCurr->addr = (uint24_t)ice.programPtr;
     gotoCurr->offset = _tell(ice.inPrgm);
     gotoCurr->dataOffsetElements = ice.dataOffsetElements;
-    gotoCurr->LblGotoElements = ice.amountOfGotos;
+    gotoCurr->LblGotoElements = prescan.amountOfGotos;
     ResetAllRegs();
 }
 

@@ -33,6 +33,7 @@ static const char *errors[] = {
     "Subprogram not found",
     "Compiling subprograms not supported",
     "Invalid program name",
+    "Not enough memory for Lbl and Goto",
     "Warning: Unknown char in the string!",
     "Warning: string has been automatically squish-ed!",
 #if !defined(COMPUTER_ICE) && !defined(__EMSCRIPTEN__)
@@ -50,35 +51,31 @@ void displayLabelError(char *label) {
     char buf[30];
 
     sprintf(buf, "Label %s not found", label);
-#if !defined(COMPUTER_ICE) && !defined(__EMSCRIPTEN__)
-    gfx_SetTextFGColor(224);
-    displayMessageLineScroll(buf);
-#else
 #ifdef COMPUTER_ICE
     fprintf(stdout, "%s\n", buf);
-#else
+#elif defined(__EMSCRIPTEN__)
     ice_error(buf, 0);
-#endif
+#else
+    gfx_SetTextFGColor(224);
+    displayMessageLineScroll(buf);
 #endif
 }
 
 void displayError(uint8_t index) {
     char buf[30];
-
-#if !defined(COMPUTER_ICE) && !defined(__EMSCRIPTEN__)
+    
+#ifdef COMPUTER_ICE
+    fprintf(stdout, "%s\n", errors[index]);
+    fprintf(stdout, "Error at line %u\n", ice.currentLine);
+#elif defined(__EMSCRIPTEN__)
+    strcpy(buf, errors[index]);
+    ice_error(buf, ice.currentLine);
+#else
     gfx_SetTextFGColor(index < W_WRONG_CHAR ? 224 : 227);
     displayMessageLineScroll(errors[index]);
 
     gfx_SetTextFGColor(0);
     sprintf(buf, "Error at line %u", ice.currentLine);
     displayMessageLineScroll(buf);
-#else
-#ifdef COMPUTER_ICE
-    fprintf(stdout, "%s\n", errors[index]);
-    fprintf(stdout, "Error at line %u\n", ice.currentLine);
-#else
-    strcpy(buf, errors[index]);
-    ice_error(buf, ice.currentLine);
-#endif
 #endif
 }

@@ -17,8 +17,6 @@ reg_t reg;
 
 const char *infoStr = "ICE Compiler v3.0 - By Peter \"PT_\" Tillema";
 const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};    // Thanks Cesium :D
-extern label_t labelStack[150];
-extern label_t gotoStack[150];
 
 #define INCBIN_PREFIX
 #include "incbin.h"
@@ -71,11 +69,15 @@ int main(int argc, char **argv) {
     ice.programPtr      = ice.programData;
     ice.programDataData = ice.programData + 0xFFFF;
     ice.programDataPtr  = ice.programDataData;
-    ice.LblPtr          = ice.LblStack;
-    ice.GotoPtr         = ice.GotoStack;
 
     // Check for icon and description before putting the C functions in the output program
     preScanProgram();
+    if (!(ice.LblStack = (label_t*)malloc(prescan.amountOfLbls * sizeof(label_t))) ||
+        !(ice.GotoStack = (label_t*)malloc(prescan.amountOfGotos * sizeof(label_t)))) {
+        displayError(E_MEM_LABEL);
+        goto stop;
+    }
+    
     _getc();
     outputPrgm = GetProgramName();
     if (outputPrgm->errorCode != VALID) {
@@ -183,11 +185,11 @@ int main(int argc, char **argv) {
         }
 
         // Find all the matching Goto's/Lbl's
-        for (currentGoto = 0; currentGoto < ice.amountOfGotos; currentGoto++) {
-            label_t *curGoto = &gotoStack[currentGoto];
+        for (currentGoto = 0; currentGoto < prescan.amountOfGotos; currentGoto++) {
+            label_t *curGoto = &ice.GotoStack[currentGoto];
 
-            for (currentLbl = 0; currentLbl < ice.amountOfLbls; currentLbl++) {
-                label_t *curLbl = &labelStack[currentLbl];
+            for (currentLbl = 0; currentLbl < prescan.amountOfLbls; currentLbl++) {
+                label_t *curLbl = &ice.LblStack[currentLbl];
 
                 if (!memcmp(curLbl->name, curGoto->name, 10)) {
                     w24((uint8_t*)(curGoto->addr + 1), curLbl->addr - (uint24_t)ice.programData + PRGM_START);

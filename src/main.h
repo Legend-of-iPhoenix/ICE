@@ -31,6 +31,14 @@
 #define IX_VARIABLES       0xD13F47
 
 typedef struct {
+    char     name[20];
+    uint24_t addr;
+    uint24_t offset;
+    uint24_t dataOffsetElements;
+    uint8_t  LblGotoElements;
+} label_t;
+
+typedef struct {
     char     outName[9];                                    // Output variable name
     char     currProgName[5][9];                            // Current program compiling
 
@@ -45,9 +53,10 @@ typedef struct {
     uint8_t  tempToken;                                     // Used for functions, i.e. For(, where an argument can stop with either a comma or a parentheses
     uint8_t  stackDepth;                                    // Used for compiling arguments of C functions
     uint8_t  amountOfOSLocationsUsed;                       // Used for the amount of OS lists and strings that are used
-    uint8_t  amountOfLbls;                                  // Amount of Lbl's
-    uint8_t  amountOfGotos;                                 // Amount of Goto's
     uint8_t  amountOfVariablesUsed;                         // Amount of used variables (max 85)
+    
+    label_t  *LblStack;                                     // Pointer to label stack
+    label_t  *GotoStack;                                    // Pointer to goto stack
 
     uint24_t *dataOffsetStack[1000];                        // Stack of the address to point to the data, which needs to be changed after compiling
     uint24_t dataOffsetElements;                            // Amount of stack elements of above
@@ -58,10 +67,6 @@ typedef struct {
     uint24_t programSize;                                   // Size of the output program
     uint24_t *stack[STACK_SIZE*5];                          // Stacks for compiling arguments
     uint24_t *stackStart;                                   // Start of the stack
-    uint24_t LblStack[1000];                                // Label stack
-    uint24_t *LblPtr;                                       // Pointer to the label stack
-    uint24_t GotoStack[2000];                               // Goto stack
-    uint24_t *GotoPtr;                                      // Pointer to the goto stack
     uint24_t OSLists[6];                                    // Used to allocate OS lists
     uint24_t OSStrings[10];                                 // Used to allocate OS string
     uint24_t tempStrings[2];                                // Used to allocate temp strings
@@ -69,6 +74,8 @@ typedef struct {
     uint24_t FileiocRoutinesStack[AMOUNT_OF_FILEIOC_FUNCTIONS]; // The address of the relocation jumps of the FILEIOC lib
     uint24_t programLength;                                 // Size of input program
     uint24_t freeMemoryPtr;                                 // Pointer to safe RAM (after the OS variables)
+    uint24_t curLbl;                                        // Current label index
+    uint24_t curGoto;                                       // Current goto index
 
     ti_var_t inPrgm;                                        // Used for getting tokens
     ti_var_t outPrgm;                                       // Used for writing bytes
@@ -195,14 +202,6 @@ typedef struct {
     uint24_t BCValue;
     uint24_t tempValue;
 } reg_t;
-
-typedef struct {
-    char     name[20];
-    uint24_t addr;
-    uint24_t offset;
-    uint24_t dataOffsetElements;
-    uint8_t  LblGotoElements;
-} label_t;
 
 typedef struct {
     uint8_t offset;
