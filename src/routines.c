@@ -15,10 +15,11 @@
 #define LB_H 10
 
 extern variable_t variableStack[85];
+extern const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4];
 prescan_t prescan;
 
 void preScanProgram(void) {
-    bool inString = false, afterNewLine = true;
+    bool inString = false, afterNewLine = true, isFloatExpression = false, inInt = false;
     int token;
 
     _rewind(ice.inPrgm);
@@ -43,14 +44,11 @@ void preScanProgram(void) {
             inString = !inString;
         } else if (tok == tStore) {
             inString = false;
-        }
-
-        if (!inString) {
+        } else {
             if (tok == tEnter || tok == tColon) {
                 inString = false;
+                isFloatExpression = false;
                 afterNewLine = 2;
-            } else if (tok == tStore) {
-                inString = false;
             } else if (tok == tRand) {
                 prescan.amountOfRandRoutines++;
                 prescan.modifiedIY = true;

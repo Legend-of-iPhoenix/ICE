@@ -25,8 +25,6 @@ extern const uint8_t InputData[];
 extern const uint8_t PrgmData[];
 #endif
 
-#define AMOUNT_OF_FUNCTIONS 28
-
 extern uint8_t (*functions[256])(int token);
 const uint8_t All2ByteTokens[] = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF};
 const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4] = {

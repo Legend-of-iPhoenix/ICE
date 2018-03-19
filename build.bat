@@ -1,3 +1,3 @@
-make debug
+make
 make -f makefile.computer
 pause

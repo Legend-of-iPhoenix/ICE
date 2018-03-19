@@ -4,6 +4,8 @@ CFLAGS := -Wall -Wextra -Wno-unknown-pragmas -Wno-unused-variable -Wno-unused-pa
 LDFLAGS := -flto
 SOURCES := $(wildcard src/*.c)
 ASMSOURCES := $(wildcard src/asm/*.asm)
+ASMSOURCES := $(filter-out src/asm/editor.asm, $(ASMSOURCES))
+ASMSOURCES := $(filter-out src/asm/mult_with_number.asm, $(ASMSOURCES))
 
 ifeq ($(OS),Windows_NT)
 NATIVEPATH = $(subst /,\,$(1))
