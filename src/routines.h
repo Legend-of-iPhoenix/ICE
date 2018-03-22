@@ -25,6 +25,7 @@ void CallRoutine(bool *routineBool, uint24_t *routineAddress, const uint8_t *rou
 uint8_t IsHexadecimal(int token);
 uint8_t GetVariableOffset(uint8_t tok);
 bool CheckEOL(void);
+bool IsA2ByteTok(uint8_t tok);
 int getNextToken(void);
 int grabString(uint8_t **outputPtr, bool stopAtStoreAndString);
 void printButton(uint24_t xPos);

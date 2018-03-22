@@ -507,7 +507,7 @@ noSquishing:
         else {
             uint8_t a, tok2 = 0;
 
-            if (tok == tExtTok || tok == t2ByteTok || tok == tVarOut) {
+            if (IsA2ByteTok(tok)) {
                 tok2 = _getc();
             }
 

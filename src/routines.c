@@ -20,13 +20,18 @@ prescan_t prescan;
 
 void preScanProgram(void) {
     bool inString = false, afterNewLine = true, isFloatExpression = false, inInt = false;
+    uint8_t intDepth = 0;
     int token;
 
     _rewind(ice.inPrgm);
 
     // Scan the entire program
     while ((token = _getc()) != EOF) {
-        uint8_t tok = (uint8_t)token;
+        uint8_t tok = (uint8_t)token, tok2 = 0;
+        
+        if (IsA2ByteTok(tok)) {
+            tok2 = _getc();
+        }
 
         if (afterNewLine) {
             afterNewLine = false;
@@ -49,6 +54,7 @@ void preScanProgram(void) {
                 inString = false;
                 isFloatExpression = false;
                 afterNewLine = 2;
+                intDepth = 0;
             } else if (tok == tRand) {
                 prescan.amountOfRandRoutines++;
                 prescan.modifiedIY = true;
@@ -127,11 +133,31 @@ void preScanProgram(void) {
                         prescan.FileiocRoutinesStack[token] = 1;
                     }
                 }
+            } else if ((tok == tRParen || tok == tRBrace) && inInt) {
+                inInt = --intDepth;
+            } else if (tok == tInt || tok == tDet) {
+                inInt = true;
+                intDepth++;
+            } else if (tok == tDecPt && !inInt) {
+                isFloatExpression = true;
+            } else {
+                uint8_t a;
+                
+                for (a = 0; a < AMOUNT_OF_FUNCTIONS; a++) {
+                    if (tok == implementedFunctions[a][0] && tok2 == implementedFunctions[a][1] && implementedFunctions[a][2] && inInt) {
+                        intDepth++;
+                    }
+                }
             }
         }
     }
 
     _rewind(ice.inPrgm);
+}
+
+bool IsA2ByteTok(uint8_t tok) {
+    return tok == tExtTok || tok == tVarMat || tok == tVarLst || tok == tVarPict || tok == tVarGDB || 
+           tok == tVarOut || tok == tVarSys || tok == tVarGDB || tok == tVarStrng || t2ByteTok;
 }
 
 prog_t *GetProgramName(void) {
