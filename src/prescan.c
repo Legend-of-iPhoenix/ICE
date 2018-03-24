@@ -42,8 +42,10 @@ void preScanProgram(void) {
                 skipLine();
             } else if (tok == tLbl) {
                 prescan.amountOfLbls++;
+                skipLine();
             } else if (tok == tGoto) {
                 prescan.amountOfGotos++;
+                skipLine();
             }
         }
 

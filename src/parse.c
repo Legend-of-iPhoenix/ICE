@@ -31,7 +31,6 @@ extern const uint8_t FileiocheaderData[];
 #endif
 
 extern uint8_t (*functions[256])(int token);
-const uint8_t All2ByteTokens[] = {0x5C, 0x5D, 0x5E, 0x60, 0x61, 0x62, 0x63, 0x7E, 0xAA, 0xBB, 0xEF};
 const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4] = {
 // function / second byte / amount of arguments / allow arguments as numbers
     {tNot,      0,              1,   1},
@@ -99,7 +98,7 @@ uint8_t parseProgram(void) {
             break;
         }
 
-#if !defined(COMPUTER_ICE) && !defined(__EMSCRIPTEN__)
+#ifdef CALCULATOR
         displayLoadingBar();
 #endif
     }
@@ -443,7 +442,7 @@ stackToOutputReturn1:
             while ((token = _getc()) != EOF && (uint8_t)token != tEnter && (uint8_t)token != tStore && (uint8_t)token != tAPost) {
                 *ice.programPtr++ = token;
 
-                if (memchr(All2ByteTokens, token, 11)) {
+                if (IsA2ByteTok(token)) {
                     *ice.programPtr++ = _getc();
                 }
             }
