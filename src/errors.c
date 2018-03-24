@@ -37,15 +37,6 @@ static const char *errors[] = {
     "Error: not an ICE program\n",
     "Warning: Unknown char in the string!",
     "Warning: string has been automatically squish-ed!",
-#ifdef CALCULATOR
-    "Warning: you need det(0) before using any           other graphics function!",
-    "Warning: you need sum(0) before using any           other file i/o function!",
-    "Warning: you need det(1) before returning to    the OS!",
-#else
-    "Warning: you need det(0) before using any other graphics function!",
-    "Warning: you need sum(0) before using any other file i/o function!",
-    "Warning: you need det(1) before returning to the OS!",
-#endif
 };
 
 void displayLabelError(char *label) {
@@ -63,15 +54,17 @@ void displayLabelError(char *label) {
 }
 
 void displayError(uint8_t index) {
-    char buf[30];
-    
 #ifdef COMPUTER_ICE
     fprintf(stdout, "%s\n", errors[index]);
     fprintf(stdout, "Error at line %u\n", ice.currentLine);
 #elif defined(__EMSCRIPTEN__)
+    char buf[30];
+    
     strcpy(buf, errors[index]);
     ice_error(buf, ice.currentLine);
 #else
+    char buf[30];
+
     gfx_SetTextFGColor(index < W_WRONG_CHAR ? 224 : 227);
     displayMessageLineScroll(errors[index]);
 

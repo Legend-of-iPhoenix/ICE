@@ -20,9 +20,6 @@
 #define E_NOT_ICE_PROG     16
 #define W_WRONG_CHAR       17
 #define W_SQUISHED         18
-#define W_START_GRAPHX     19
-#define W_START_FILEIOC    20
-#define W_CLOSE_GRAPHX     21
 
 #define VALID              255
 

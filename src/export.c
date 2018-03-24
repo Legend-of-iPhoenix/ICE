@@ -35,7 +35,6 @@ void export_program(const char *name, uint8_t *data, size_t size) {
     uint8_t len_low;
     unsigned int data_size;
     unsigned int i,checksum;
-    FILE *out_file;
 
     // gather structure information
     uint8_t *output = calloc(0x10100, sizeof(uint8_t));
@@ -87,6 +86,7 @@ void export_program(const char *name, uint8_t *data, size_t size) {
 
     // write the buffer to the file
     char *file_name = str_dupcat(name, ".8xp");
+    FILE *out_file;
 
     if (!(out_file = fopen(file_name, "wb"))) {
         fprintf(stderr, "Unable to open output program file.");

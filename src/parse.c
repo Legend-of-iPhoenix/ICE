@@ -1125,7 +1125,7 @@ static uint8_t functionWhile(int token) {
 }
 
 uint8_t functionRepeat(int token) {
-    uint24_t tempCurrentLine, tempCurrentLine2, dataOffsetElementsBackup = ice.dataOffsetElements;
+    uint24_t tempCurrentLine, tempCurrentLine2;
     uint16_t RepeatCondStart, RepeatProgEnd;
     uint8_t *RepeatCodeStart, res;
 
@@ -1657,8 +1657,7 @@ static uint8_t functionPause(int token) {
 }
 
 static uint8_t functionInput(int token) {
-    uint8_t tok, res, var;
-    bool onlyOnce = prescan.amountOfInputRoutines == 1;
+    uint8_t res, var;
 
     expr.inFunction = true;
     if ((res = parseExpression(_getc())) != VALID) {

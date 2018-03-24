@@ -108,6 +108,8 @@ findNextLabel:;
         // Write the actual program file
         export_program(ice.outName, export, totalSize);
         free(export);
+        free(ice.LblStack);
+        free(ice.GotoStack);
     } else {
         displayError(res);
     }

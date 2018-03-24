@@ -17,7 +17,7 @@ expr_t expr;
 reg_t reg;
 
 const char *infoStr = "ICE Compiler v3.0 - By Peter \"PT_\" Tillema";
-char *inputPrograms[22];
+char *inputPrograms[23];
 
 static int myCompare(const void * a, const void * b) {
     return strcmp(*(const char **)a, *(const char **)b);

@@ -15,8 +15,9 @@
 #define LB_H 10
 
 bool IsA2ByteTok(uint8_t tok) {
-    return tok == tExtTok || tok == tVarMat || tok == tVarLst || tok == tVarPict || tok == tVarGDB || 
-           tok == tVarOut || tok == tVarSys || tok == tVarGDB || tok == tVarStrng || t2ByteTok;
+    uint8_t All2ByteTokens[9] = {tExtTok, tVarMat, tVarLst, tVarPict, tVarGDB, tVarOut, tVarSys, tVarStrng, t2ByteTok};
+    
+    return memchr(All2ByteTokens, tok, sizeof(All2ByteTokens)) || 0;
 }
 
 prog_t *GetProgramName(void) {
@@ -83,11 +84,10 @@ void ClearAnsFlags(void) {
 }
 
 void ChangeRegValue(uint24_t inValue, uint24_t outValue, uint8_t opcodes[7]) {
-    uint8_t a = 0;
-
     expr.SizeOfOutputNumber = 0;
 
     if (reg.allowedToOptimize) {
+        uint8_t a;
         if (outValue - inValue < 5) {
             for (a = 0; a < (uint8_t)(outValue - inValue); a++) {
                 output(uint8_t, opcodes[0]);
@@ -266,7 +266,6 @@ void SeekMinus1(void) {
 
 void displayMessageLineScroll(char *string) {
 #ifdef CALCULATOR
-    char buf[30];
     char c;
 
     gfx_SetTextXY(1, gfx_GetTextY());
@@ -365,7 +364,7 @@ uint8_t GetVariableOffset(uint8_t tok) {
 
     // This variable already exists, which is always true after prescanning (if everything went right..)
     for (b = 0; b < prescan.amountOfVariablesUsed; b++) {
-        if (!strcmp(variableName, (&prescan.variables[b])->name)) {
+        if (!strcmp(variableName, prescan.variables[b].name)) {
             return b;
         }
     }

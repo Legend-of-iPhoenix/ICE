@@ -26,6 +26,8 @@ void preScanProgram(void) {
     uint8_t intDepth = 0, amountOfDependantVariables = 0;
     uint8_t *dependantVariablesPtr = NULL;
     int token;
+    
+    dbg_Debugger();
 
     _rewind(ice.inPrgm);
 
@@ -66,7 +68,7 @@ void preScanProgram(void) {
             if (tok == tEnter || (tok == tColon && !inString)) {
                 inString = false;
                 isFloatExpression = false;
-                afterNewLine = 2;
+                afterNewLine = true;
                 intDepth = 0;
                 amountOfDependantVariables = 0;
             } else if (!inString) {
@@ -183,7 +185,6 @@ void preScanProgram(void) {
 
 uint8_t getNameIconDescription(void) {
     prog_t *outputPrgm;
-    uint8_t temp;
     
     if (_getc() != 0x2C) {
         return E_NOT_ICE_PROG;
@@ -205,6 +206,8 @@ uint8_t getNameIconDescription(void) {
 
         // Get hexadecimal
         do {
+            uint8_t temp;
+            
             if ((temp = IsHexadecimal(_getc())) == 16) {
                 return E_INVALID_HEX;
             }
@@ -278,8 +281,9 @@ uint8_t parsePrescan(void) {
     }
     
     // Check free RAM for Lbls and Gotos
-    if (!(ice.LblStack = (label_t*)malloc(prescan.amountOfLbls * sizeof(label_t))) ||
-        !(ice.GotoStack = (label_t*)malloc(prescan.amountOfGotos * sizeof(label_t)))) {
+    ice.LblStack = (label_t*)malloc(prescan.amountOfLbls * sizeof(label_t));
+    ice.GotoStack = (label_t*)malloc(prescan.amountOfGotos * sizeof(label_t));
+    if (!ice.LblStack || !ice.GotoStack) {
             return E_MEM_LABEL;
     }
     
