@@ -82,9 +82,6 @@ typedef struct {
 
     bool     lastTokenIsReturn;                             // Last token is a "Return", so we can omit our "ret" :)
     bool     modifiedIY;                                    // Some routines modify IY, and some routines needs it
-    bool     startedGRAPHX;
-    bool     startedFILEIOC;
-    bool     endedGRAPHX;
 
     bool     usedAlreadyRand;                               // Only once the "rand" routine in the program data
     uint24_t randAddr;                                      // Address of the "rand" routine in the program data

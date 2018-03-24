@@ -1142,31 +1142,6 @@ uint8_t parseFunction(uint24_t index) {
             expr.outputReturnRegister = REGISTER_DE;
         }
 
-        // Warn if C function used BEFORE starting GRAPHX
-        if (function == tDet) {
-            if (function2 == 1) {
-                ice.endedGRAPHX = true;
-            }
-            if (!function2) {
-                ice.startedGRAPHX = true;
-            }
-            if (!ice.startedGRAPHX) {
-                displayError(W_START_GRAPHX);
-            }
-            ice.startedGRAPHX = true;
-        }
-
-        // Warn if C function used BEFORE starting FILEIOC
-        else {
-            if (!function2) {
-                ice.startedFILEIOC = true;
-            }
-            if (!ice.startedFILEIOC) {
-                displayError(W_START_FILEIOC);
-            }
-            ice.startedFILEIOC = true;
-        }
-
         ResetAllRegs();
         expr.outputIsNumber = expr.outputIsVariable = expr.outputIsString = false;
         ice.modifiedIY = true;

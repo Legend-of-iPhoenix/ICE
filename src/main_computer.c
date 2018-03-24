@@ -115,10 +115,6 @@ findNextLabel:;
         }
         totalSize = ice.programSize + programDataSize + 3;
 
-        if (ice.startedGRAPHX && !ice.endedGRAPHX) {
-            displayError(W_CLOSE_GRAPHX);
-        }
-
         uint8_t *export = malloc(0x10000);
 
         // Write ASM header

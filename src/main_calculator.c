@@ -220,10 +220,6 @@ findNextLabel:;
         }
         totalSize = ice.programSize + programDataSize + 3;
 
-        if (ice.startedGRAPHX && !ice.endedGRAPHX) {
-            displayError(W_CLOSE_GRAPHX);
-        }
-
         // Export the program
         ice.outPrgm = _open(ice.outName);
         if (ice.outPrgm) {
