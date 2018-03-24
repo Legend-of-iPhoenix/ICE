@@ -101,7 +101,7 @@ void MultWithNumber(uint24_t num, uint8_t *programPtr, bool ChangeRegisters) {
 #endif
 
 bool comparePtrToTempStrings(uint24_t addr) {
-    return (addr == ice.tempStrings[TempString1] || addr == ice.tempStrings[TempString2]);
+    return (addr == prescan.tempStrings[TempString1] || addr == prescan.tempStrings[TempString2]);
 }
 
 uint8_t getIndexOfOperator(uint8_t operator) {
@@ -281,7 +281,7 @@ uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, 
 }
 
 void LD_HL_STRING(uint24_t stringPtr, uint8_t type) {
-    if ((type != TYPE_OS_STRING) && (stringPtr != ice.tempStrings[TempString1] && stringPtr != ice.tempStrings[TempString2])) {
+    if ((type != TYPE_OS_STRING) && (stringPtr != prescan.tempStrings[TempString1] && stringPtr != prescan.tempStrings[TempString2])) {
         ProgramPtrToOffsetStack();
     }
     LD_HL_IMM(stringPtr);
@@ -991,14 +991,8 @@ void AddChainAnsNumber(void) {
     }
 }
 void AddVariableNumber(void) {
-    if (!ice.inDispExpression && entry2_operand < 128 && entry2_operand > 4) {
-        LD_IY_IND_IX_OFF(entry1_operand);
-        LEA_HL_IY_OFF(entry2_operand);
-        ice.modifiedIY = true;
-    } else {
-        LD_HL_IND_IX_OFF(entry1_operand);
-        AddChainAnsNumber();
-    }
+    LD_HL_IND_IX_OFF(entry1_operand);
+    AddChainAnsNumber();
 }
 void AddChainAnsVariable(void) {
     MaybeAToHL();
@@ -1069,10 +1063,10 @@ void AddStringString(void) {
             }
             LD_HL_IMM(entry1_operand);
             PUSH_HL();
-            if (entry2_operand == ice.tempStrings[TempString1]) {
-                LD_HL_IMM(ice.tempStrings[TempString2]);
+            if (entry2_operand == prescan.tempStrings[TempString1]) {
+                LD_HL_IMM(prescan.tempStrings[TempString2]);
             } else {
-                LD_HL_IMM(ice.tempStrings[TempString1]);
+                LD_HL_IMM(prescan.tempStrings[TempString1]);
             }
             PUSH_HL();
             CALL(__strcpy);
@@ -1139,14 +1133,8 @@ void SubNumberChainAns(void) {
     LD_HL_IMM(entry1_operand);
 }
 void SubVariableNumber(void) {
-    if (!ice.inDispExpression && entry2_operand < 129 && entry2_operand > 4) {
-        LD_IY_IND_IX_OFF(entry1_operand);
-        LEA_HL_IY_OFF(-entry2_operand);
-        ice.modifiedIY = true;
-    } else {
-        LD_HL_IND_IX_OFF(entry1_operand);
-        SubChainAnsNumber();
-    }
+    LD_HL_IND_IX_OFF(entry1_operand);
+    SubChainAnsNumber();
 }
 void SubVariableVariable(void) {
     LD_HL_IND_IX_OFF(entry1_operand);

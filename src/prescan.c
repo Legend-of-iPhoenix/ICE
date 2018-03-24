@@ -54,6 +54,7 @@ void preScanProgram(void) {
             inString = !inString;
         } else if (tok == tStore) {
             inString = false;
+            token = _getc();
         } else {
             if (tok == tEnter || (tok == tColon && !inString)) {
                 inString = false;

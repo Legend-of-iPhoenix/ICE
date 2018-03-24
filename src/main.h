@@ -43,6 +43,8 @@ typedef struct {
 typedef struct {
     uint8_t type;
     uint8_t offset;
+    uint8_t amountOfDependancies;
+    uint8_t *dependancies;
     char    name[21];
 } variable_t;
 
@@ -50,14 +52,11 @@ typedef struct {
     char     outName[9];                                    // Output variable name
     char     currProgName[5][9];                            // Current program compiling
 
-    uint8_t  nestedBlocks;                                  // Amount of nested If/Repeat/While
     uint8_t  *programData;                                  // Address of the program
     uint8_t  *programDataData;                              // Address of the end of the program data
     uint8_t  *programPtr;                                   // Pointer to the program
     uint8_t  *programPtrBackup;                             // Same as above
     uint8_t  *programDataPtr;                               // Pointer to the program data
-    uint8_t  amountOfGraphxRoutinesUsed;                    // Used for the relocation of C functions at the beginning of the program - GRAPHX
-    uint8_t  amountOfFileiocRoutinesUsed;                   // Used for the relocation of C functions at the beginning of the program - FILEIOC
     uint8_t  tempToken;                                     // Used for functions, i.e. For(, where an argument can stop with either a comma or a parentheses
     uint8_t  stackDepth;                                    // Used for compiling arguments of C functions
     
@@ -73,11 +72,6 @@ typedef struct {
     uint24_t programSize;                                   // Size of the output program
     uint24_t *stack[STACK_SIZE*5];                          // Stacks for compiling arguments
     uint24_t *stackStart;                                   // Start of the stack
-    uint24_t OSLists[6];                                    // Used to allocate OS lists
-    uint24_t OSStrings[10];                                 // Used to allocate OS string
-    uint24_t tempStrings[2];                                // Used to allocate temp strings
-    uint24_t GraphxRoutinesStack[AMOUNT_OF_GRAPHX_FUNCTIONS];   // The address of the relocation jumps of the GRAPHX lib
-    uint24_t FileiocRoutinesStack[AMOUNT_OF_FILEIOC_FUNCTIONS]; // The address of the relocation jumps of the FILEIOC lib
     uint24_t programLength;                                 // Size of input program
     uint24_t freeMemoryPtr;                                 // Pointer to safe RAM (after the OS variables)
     uint24_t curLbl;                                        // Current label index
@@ -88,11 +82,9 @@ typedef struct {
 
     bool     lastTokenIsReturn;                             // Last token is a "Return", so we can omit our "ret" :)
     bool     modifiedIY;                                    // Some routines modify IY, and some routines needs it
-    bool     inDispExpression;                              // Used for optimizing <variable>+<number> that it doesn't overwrite IY
     bool     startedGRAPHX;
     bool     startedFILEIOC;
     bool     endedGRAPHX;
-    bool     usesRandRoutine;                               // Used to seed the rand routine when it's used
 
     bool     usedAlreadyRand;                               // Only once the "rand" routine in the program data
     uint24_t randAddr;                                      // Address of the "rand" routine in the program data
