@@ -55,7 +55,7 @@ void preScanProgram(void) {
         } else if (tok == tStore) {
             inString = false;
         } else {
-            if (tok == tEnter || tok == tColon) {
+            if (tok == tEnter || (tok == tColon && !inString)) {
                 inString = false;
                 isFloatExpression = false;
                 afterNewLine = 2;
