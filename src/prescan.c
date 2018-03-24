@@ -28,7 +28,6 @@ void preScanProgram(void) {
     int token;
     
     dbg_Debugger();
-
     _rewind(ice.inPrgm);
 
     // Scan the entire program
@@ -284,7 +283,7 @@ uint8_t parsePrescan(void) {
     ice.LblStack = (label_t*)malloc(prescan.amountOfLbls * sizeof(label_t));
     ice.GotoStack = (label_t*)malloc(prescan.amountOfGotos * sizeof(label_t));
     if (!ice.LblStack || !ice.GotoStack) {
-            return E_MEM_LABEL;
+        return E_MEM_LABEL;
     }
     
     // Define variable types (ints and floats)
