@@ -17,11 +17,12 @@
 #define E_NO_SUBPROG       13
 #define E_INVALID_PROG     14
 #define E_MEM_LABEL        15
-#define W_WRONG_CHAR       16
-#define W_SQUISHED         17
-#define W_START_GRAPHX     18
-#define W_START_FILEIOC    19
-#define W_CLOSE_GRAPHX     20
+#define E_NOT_ICE_PROG     16
+#define W_WRONG_CHAR       17
+#define W_SQUISHED         18
+#define W_START_GRAPHX     19
+#define W_START_FILEIOC    20
+#define W_CLOSE_GRAPHX     21
 
 #define VALID              255
 

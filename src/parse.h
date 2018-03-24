@@ -18,6 +18,10 @@
 #define TYPE_MASK_U16        1
 #define TYPE_MASK_U24        2
 
+#define TYPE_BYTE            0
+#define TYPE_INT             1
+#define TYPE_FLOAT           2
+
 uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffsetElements, uint8_t tempGotoElements, uint8_t tempLblElements);
 uint8_t JumpBackwards(uint8_t *startAddr, uint8_t whichOpcode);
 void optimizeZeroCarryFlagOutput(void);

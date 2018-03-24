@@ -8,6 +8,7 @@
 #include "output.h"
 #include "operator.h"
 #include "routines.h"
+#include "prescan.h"
 
 #ifdef COMPUTER_ICE
 #define INCBIN_PREFIX

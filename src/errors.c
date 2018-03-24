@@ -34,6 +34,7 @@ static const char *errors[] = {
     "Compiling subprograms not supported",
     "Invalid program name",
     "Not enough memory for Lbl and Goto",
+    "Error: not an ICE program\n",
     "Warning: Unknown char in the string!",
     "Warning: string has been automatically squish-ed!",
 #if !defined(COMPUTER_ICE) && !defined(__EMSCRIPTEN__)

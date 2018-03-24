@@ -14,147 +14,6 @@
 #define LB_W 160
 #define LB_H 10
 
-extern variable_t variableStack[85];
-extern const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4];
-prescan_t prescan;
-
-void preScanProgram(void) {
-    bool inString = false, afterNewLine = true, isFloatExpression = false, inInt = false;
-    uint8_t intDepth = 0;
-    int token;
-
-    _rewind(ice.inPrgm);
-
-    // Scan the entire program
-    while ((token = _getc()) != EOF) {
-        uint8_t tok = (uint8_t)token, tok2 = 0;
-        
-        if (IsA2ByteTok(tok)) {
-            tok2 = _getc();
-        }
-
-        if (afterNewLine) {
-            afterNewLine = false;
-            if (tok == tii) {
-                skipLine();
-            } else if (tok == tLbl) {
-                prescan.amountOfLbls++;
-            } else if (tok == tGoto) {
-                prescan.amountOfGotos++;
-            }
-        }
-
-        if (tok == tString) {
-            prescan.usedTempStrings = true;
-            inString = !inString;
-        } else if (tok == tStore) {
-            inString = false;
-        } else {
-            if (tok == tEnter || tok == tColon) {
-                inString = false;
-                isFloatExpression = false;
-                afterNewLine = 2;
-                intDepth = 0;
-            } else if (tok == tRand) {
-                prescan.amountOfRandRoutines++;
-                prescan.modifiedIY = true;
-            } else if (tok == tSqrt) {
-                prescan.amountOfSqrtRoutines++;
-                prescan.modifiedIY = true;
-            } else if (tok == tMean) {
-                prescan.amountOfMeanRoutines++;
-            } else if (tok == tInput) {
-                prescan.amountOfInputRoutines++;
-            } else if (tok == tPause) {
-                prescan.amountOfPauseRoutines++;
-            } else if (tok == tVarLst) {
-                if (!prescan.OSLists[token = _getc()]) {
-                    prescan.OSLists[token] = pixelShadow + 2000 * (prescan.amountOfOSVarsUsed++);
-                }
-            } else if (tok == tVarStrng) {
-                prescan.usedTempStrings = true;
-                if (!prescan.OSStrings[token = _getc()]) {
-                    prescan.OSStrings[token] = pixelShadow + 2000 * (prescan.amountOfOSVarsUsed++);
-                }
-            } else if (tok == t2ByteTok) {
-                // AsmComp(
-                if ((tok = (uint8_t)_getc()) == tAsmComp) {
-                    ti_var_t tempProg = ice.inPrgm;
-                    prog_t *newProg = GetProgramName();
-
-                    if ((ice.inPrgm = _open(newProg->prog))) {
-                        preScanProgram();
-                        _close(ice.inPrgm);
-                    }
-                    ice.inPrgm = tempProg;
-                } else if (tok == tRandInt) {
-                    prescan.amountOfRandRoutines++;
-                    prescan.modifiedIY = true;
-                }
-            } else if (tok == tExtTok) {
-                if ((tok = (uint8_t)_getc()) == tStartTmr) {
-                    prescan.amountOfTimerRoutines++;
-                }
-            } else if (tok == tDet || tok == tSum) {
-                uint8_t tok1 = _getc();
-                uint8_t tok2 = _getc();
-
-                prescan.modifiedIY = true;
-
-                // Invalid det( command
-                if (tok1 < t0 || tok1 > t9) {
-                    break;
-                }
-
-                // Get the det( command
-                if (tok2 < t0 || tok2 > t9) {
-                    token = tok1 - t0;
-                } else {
-                    token = (tok1 - t0) * 10 + (tok2 - t0);
-                }
-
-                if (tok == tDet) {
-                    prescan.hasGraphxFunctions = true;
-                    if (!token) {
-                        prescan.hasGraphxStart = true;
-                    }
-                    if (token == 1) {
-                        prescan.hasGraphxEnd = true;
-                    }
-                    if (!prescan.GraphxRoutinesStack[token]) {
-                        prescan.GraphxRoutinesStack[token] = 1;
-                    }
-                } else {
-                    prescan.hasFileiocFunctions = true;
-                    if (!token) {
-                        prescan.hasFileiocStart = true;
-                    }
-                    if (!prescan.FileiocRoutinesStack[token]) {
-                        prescan.FileiocRoutinesStack[token] = 1;
-                    }
-                }
-            } else if ((tok == tRParen || tok == tRBrace) && inInt) {
-                inInt = --intDepth;
-            } else if (tok == tInt || tok == tDet) {
-                inInt = true;
-                intDepth++;
-            } else if (tok == tDecPt && !inInt) {
-                isFloatExpression = true;
-            } else {
-                uint8_t a;
-                
-                for (a = 0; a < AMOUNT_OF_FUNCTIONS; a++) {
-                    if (tok == implementedFunctions[a][0] && tok2 == implementedFunctions[a][1] && implementedFunctions[a][2] && inInt) {
-                        intDepth++;
-                    }
-                }
-            }
-        }
-    }
-
-    _rewind(ice.inPrgm);
-}
-
 bool IsA2ByteTok(uint8_t tok) {
     return tok == tExtTok || tok == tVarMat || tok == tVarLst || tok == tVarPict || tok == tVarGDB || 
            tok == tVarOut || tok == tVarSys || tok == tVarGDB || tok == tVarStrng || t2ByteTok;
@@ -493,29 +352,30 @@ void CallRoutine(bool *routineBool, uint24_t *routineAddress, const uint8_t *rou
 uint8_t GetVariableOffset(uint8_t tok) {
     char variableName[21] = {0};
     variable_t *variableNew;
-    uint8_t a = 1, b;
+    uint8_t a = 0, b;
 
     variableName[0] = tok;
     while ((tok = _getc()) >= tA && tok <= tTheta) {
-        variableName[a++] = tok;
+        if (a < 20) {
+            variableName[a++] = tok;
+        }
     }
     variableName[a] = 0;
-    if (tok != 0xFF) {
-        SeekMinus1();
-    }
+    SeekMinus1();
 
-    // This variable already exists
-    for (b = 0; b < ice.amountOfVariablesUsed; b++) {
-        if (!strcmp(variableName, (&variableStack[b])->name)) {
-            return (&variableStack[b])->offset;
+    // This variable already exists, which is always true after prescanning (if everything went right..)
+    for (b = 0; b < prescan.amountOfVariablesUsed; b++) {
+        if (!strcmp(variableName, (&prescan.variables[b])->name)) {
+            return b;
         }
     }
 
     // Create new variable
-    variableNew = &variableStack[ice.amountOfVariablesUsed];
+    variableNew = &prescan.variables[prescan.amountOfVariablesUsed];
     memcpy(variableNew->name, variableName, a + 1);
+    variableNew->type = TYPE_INT;
 
-    return variableNew->offset = ice.amountOfVariablesUsed++ * 3 - 128;
+    return prescan.amountOfVariablesUsed++;
 }
 
 #if !defined(COMPUTER_ICE) && !defined(__EMSCRIPTEN__)

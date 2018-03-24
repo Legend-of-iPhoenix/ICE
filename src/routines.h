@@ -1,7 +1,6 @@
 #ifndef ROUTINES_H
 #define ROUTINES_H
 
-void preScanProgram(void);
 void ProgramPtrToOffsetStack(void);
 void displayLoadingBarFrame(void);
 prog_t *GetProgramName(void);

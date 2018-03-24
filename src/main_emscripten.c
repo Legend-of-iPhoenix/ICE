@@ -10,15 +10,11 @@
 #include "output.h"
 #include "operator.h"
 #include "routines.h"
+#include "prescan.h"
 
 ice_t ice;
 expr_t expr;
 reg_t reg;
-
-extern const uint8_t CheaderData[];
-extern const uint8_t SrandData[];
-extern const uint8_t FileiocheaderData[];
-const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};    // Thanks Cesium :D
 
 void w24(void *x, uint32_t val) {
     uint8_t *ptr = (uint8_t*)(x);
@@ -41,7 +37,6 @@ uint32_t r24(void *x) {
 int main(int argc, char **argv) {
     uint8_t res, temp;
     uint24_t programDataSize, offset, totalSize;
-    prog_t *outputPrgm;
     
     ice.programData     = malloc(0xFFFF + 0x100);
     ice.programPtr      = ice.programData;
@@ -50,111 +45,13 @@ int main(int argc, char **argv) {
 
     // Check for icon and description before putting the C functions in the output program
     preScanProgram();
-    if (!(ice.LblStack = (label_t*)malloc(prescan.amountOfLbls * sizeof(label_t))) ||
-        !(ice.GotoStack = (label_t*)malloc(prescan.amountOfGotos * sizeof(label_t)))) {
-        displayError(E_MEM_LABEL);
+    if ((res = getNameIconDescription()) != VALID || (res = parsePrescan())) {
+        displayError(res);
         goto stop;
     }
-    
-    if (_getc() != 0x2C) {
-        return 1;
-    }
-    outputPrgm = GetProgramName();
-    if (outputPrgm->errorCode != VALID) {
-        displayError(outputPrgm->errorCode);
-        goto stop;
-    }
-    strcpy(ice.outName, outputPrgm->prog);
 
-    // Has icon
-    if ((uint8_t)_getc() == tii && (uint8_t)_getc() == tString) {
-        uint8_t b = 0;
-
-        *ice.programPtr = OP_JP;
-        w24(ice.programPtr + 4, 0x101001);
-        ice.programPtr += 7;
-
-        // Get hexadecimal
-        do {
-            if ((temp = IsHexadecimal(_getc())) == 16) {
-                displayError(E_INVALID_HEX);
-                goto stop;
-            }
-            *ice.programPtr++ = colorTable[temp];
-        } while (++b);
-
-        if ((uint8_t)_getc() != tString || (uint8_t)_getc() != tEnter) {
-            displayError(E_SYNTAX);
-            goto stop;
-        }
-
-        // Check description
-        if ((uint8_t)_getc() == tii) {
-            grabString(&ice.programPtr, false);
-        }
-        *ice.programPtr++ = 0;
-
-        // Write the right jp offset
-        w24(ice.programData + 1, ice.programPtr - ice.programData + PRGM_START);
-    }
-    
-    _rewind(ice.inPrgm);
-
-    if (prescan.hasGraphxFunctions) {
-        uint8_t a;
-
-        memcpy(ice.programPtr, CheaderData, SIZEOF_CHEADER);
-        ice.programPtr += SIZEOF_CHEADER;
-        for (a = 0; a < AMOUNT_OF_GRAPHX_FUNCTIONS; a++) {
-            if (prescan.GraphxRoutinesStack[a]) {
-                prescan.GraphxRoutinesStack[a] = (uint24_t)ice.programPtr;
-                JP(a * 3);
-            }
-        }
-    } else if (prescan.hasFileiocFunctions) {
-        memcpy(ice.programPtr, CheaderData, SIZEOF_CHEADER - 9);
-        ice.programPtr += SIZEOF_CHEADER - 9;
-    }
-
-    if (prescan.hasFileiocFunctions) {
-        uint8_t a;
-
-        memcpy(ice.programPtr, FileiocheaderData, 10);
-        ice.programPtr += 10;
-        for (a = 0; a < AMOUNT_OF_FILEIOC_FUNCTIONS; a++) {
-            if (prescan.FileiocRoutinesStack[a]) {
-                prescan.FileiocRoutinesStack[a] = (uint24_t)ice.programPtr;
-                JP(a * 3);
-            }
-        }
-    }
-
-    prescan.freeMemoryPtr = (prescan.tempStrings[1] = (prescan.tempStrings[0] = pixelShadow + 2000 * prescan.amountOfOSVarsUsed) + 2000) + 2000;
-
-    LD_IX_IMM(IX_VARIABLES);
-
-    // Eventually seed the rand
-    if (ice.usesRandRoutine) {
-        ice.programDataPtr -= SIZEOF_RAND_DATA;
-        ice.randAddr = (uint24_t)ice.programDataPtr;
-        memcpy(ice.programDataPtr, SrandData, SIZEOF_RAND_DATA);
-        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 2);
-        w24((uint8_t*)(ice.randAddr + 2), ice.randAddr + 102);
-        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 6);
-        w24((uint8_t*)(ice.randAddr + 6), ice.randAddr + 105);
-        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 19);
-        w24((uint8_t*)(ice.randAddr + 19), ice.randAddr + 102);
-
-        LD_HL_IND(0xF30044);
-        ProgramPtrToOffsetStack();
-        CALL((uint24_t)ice.programDataPtr);
-    }
-
-    // Do the stuff
-    res = parseProgram();
-
-    // Create or empty the output program if parsing succeeded
-    if (res == VALID) {
+    // Parse the program, create or empty the output program if parsing succeeded
+    if ((res = parseProgram()) == VALID) {
         uint8_t currentGoto, currentLbl;
         uint24_t previousSize = 0;
 

@@ -8,6 +8,7 @@
 #include "stack.h"
 #include "output.h"
 #include "routines.h"
+#include "prescan.h"
 
 #ifdef COMPUTER_ICE
 #define INCBIN_PREFIX
@@ -15,6 +16,7 @@
 INCBIN(Pause, "src/asm/pause.bin");
 INCBIN(Input, "src/asm/input.bin");
 INCBIN(Prgm, "src/asm/prgm.bin");
+INCBIN(SRand, "src/asm/srand.bin");
 
 extern char *str_dupcat(const char *s, const char *c);
 #endif
@@ -23,6 +25,9 @@ extern char *str_dupcat(const char *s, const char *c);
 extern const uint8_t PauseData[];
 extern const uint8_t InputData[];
 extern const uint8_t PrgmData[];
+extern const uint8_t CheaderData[];
+extern const uint8_t SrandData[];
+extern const uint8_t FileiocheaderData[];
 #endif
 
 extern uint8_t (*functions[256])(int token);
@@ -60,11 +65,29 @@ const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4] = {
 };
 element_t outputStack[400];
 element_t stack[200];
-variable_t variableStack[85];
 
 uint8_t parseProgram(void) {
     int token;
     uint8_t ret = VALID;
+    
+    LD_IX_IMM(IX_VARIABLES);
+    
+    // Eventually seed the rand
+    if (ice.usesRandRoutine) {
+        ice.programDataPtr -= SIZEOF_RAND_DATA;
+        ice.randAddr = (uint24_t)ice.programDataPtr;
+        memcpy(ice.programDataPtr, SRandData, SIZEOF_RAND_DATA);
+        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 2);
+        w24((uint8_t*)(ice.randAddr + 2), ice.randAddr + 102);
+        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 6);
+        w24((uint8_t*)(ice.randAddr + 6), ice.randAddr + 105);
+        ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.randAddr + 19);
+        w24((uint8_t*)(ice.randAddr + 19), ice.randAddr + 102);
+
+        LD_HL_IND(0xF30044);
+        ProgramPtrToOffsetStack();
+        CALL((uint24_t)ice.programDataPtr);
+    }
 
     // Do things based on the token
     while ((token = _getc()) != EOF) {

@@ -41,6 +41,12 @@ typedef struct {
 } label_t;
 
 typedef struct {
+    uint8_t type;
+    uint8_t offset;
+    char    name[21];
+} variable_t;
+
+typedef struct {
     char     outName[9];                                    // Output variable name
     char     currProgName[5][9];                            // Current program compiling
 
@@ -54,8 +60,6 @@ typedef struct {
     uint8_t  amountOfFileiocRoutinesUsed;                   // Used for the relocation of C functions at the beginning of the program - FILEIOC
     uint8_t  tempToken;                                     // Used for functions, i.e. For(, where an argument can stop with either a comma or a parentheses
     uint8_t  stackDepth;                                    // Used for compiling arguments of C functions
-    uint8_t  amountOfOSLocationsUsed;                       // Used for the amount of OS lists and strings that are used
-    uint8_t  amountOfVariablesUsed;                         // Amount of used variables (max 85)
     
     label_t  *LblStack;                                     // Pointer to label stack
     label_t  *GotoStack;                                    // Pointer to goto stack
@@ -165,6 +169,7 @@ typedef struct {
     uint8_t  amountOfPauseRoutines;
     uint8_t  amountOfTimerRoutines;
     uint8_t  amountOfOSVarsUsed;
+    uint8_t  amountOfVariablesUsed;
 
     uint24_t amountOfLbls;
     uint24_t amountOfGotos;
@@ -174,6 +179,8 @@ typedef struct {
     uint24_t OSLists[10];
     uint24_t freeMemoryPtr;
     uint24_t tempStrings[2];
+    
+    variable_t variables[255];
 } prescan_t;
 
 typedef struct {
@@ -200,11 +207,6 @@ typedef struct {
     uint24_t BCValue;
     uint24_t tempValue;
 } reg_t;
-
-typedef struct {
-    uint8_t offset;
-    char    name[20];
-} variable_t;
 
 typedef struct {
     uint8_t errorCode;
