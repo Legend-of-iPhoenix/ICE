@@ -73,7 +73,6 @@ typedef struct {
     uint24_t *stack[STACK_SIZE*5];                          // Stacks for compiling arguments
     uint24_t *stackStart;                                   // Start of the stack
     uint24_t programLength;                                 // Size of input program
-    uint24_t freeMemoryPtr;                                 // Pointer to safe RAM (after the OS variables)
     uint24_t curLbl;                                        // Current label index
     uint24_t curGoto;                                       // Current goto index
 

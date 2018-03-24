@@ -735,8 +735,8 @@ uint8_t parseFunction(uint24_t index) {
             LD_ADDR_HL(ice.LoadTilemapAddr + 27);
 
             // Set table base
-            LD_HL_IMM(ice.freeMemoryPtr);
-            ice.freeMemoryPtr += outputPrev->operand;
+            LD_HL_IMM(prescan.freeMemoryPtr);
+            prescan.freeMemoryPtr += outputPrev->operand;
             ProgramPtrToOffsetStack();
             LD_ADDR_HL(ice.LoadTilemapAddr + 40);
 
@@ -1378,7 +1378,7 @@ void InsertMallocRoutine(void) {
     bool boolUsed = ice.usedAlreadyMalloc;
 
     CallRoutine(&ice.usedAlreadyMalloc, &ice.MallocAddr, (uint8_t*)MallocData, SIZEOF_MALLOC_DATA, 0);
-    *(uint24_t*)(ice.MallocAddr + 1) = ice.freeMemoryPtr;
+    *(uint24_t*)(ice.MallocAddr + 1) = prescan.freeMemoryPtr;
 
     if (!boolUsed) {
         ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.MallocAddr + 6);
