@@ -23,7 +23,8 @@ const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,
 
 void preScanProgram(void) {
     bool inString = false, afterNewLine = true, isFloatExpression = false, inInt = false;
-    uint8_t intDepth = 0;
+    uint8_t intDepth = 0, amountOfDependantVariables = 0;
+    uint8_t *dependantVariablesPtr = NULL;
     int token;
 
     _rewind(ice.inPrgm);
@@ -54,15 +55,32 @@ void preScanProgram(void) {
             inString = !inString;
         } else if (tok == tStore) {
             inString = false;
-            token = _getc();
+            if ((tok = (uint8_t)(token = _getc())) >= tA && tok <= tTheta) {
+                uint8_t a = GetVariableOffset(tok);
+                
+                prescan.variables[a].type = (isFloatExpression ? TYPE_FLOAT : TYPE_INT);
+                prescan.variables[a].dependancies = dependantVariablesPtr;
+                prescan.variables[a].amountOfDependancies = amountOfDependantVariables;
+            }
         } else {
             if (tok == tEnter || (tok == tColon && !inString)) {
                 inString = false;
                 isFloatExpression = false;
                 afterNewLine = 2;
                 intDepth = 0;
+                amountOfDependantVariables = 0;
             } else if (!inString) {
-                if (tok == tRand) {
+                if (tok >= tA && tok <= tTheta) {
+                    uint8_t a = GetVariableOffset(tok);
+                    uint8_t *variablePtr = malloc(1);
+                    
+                    // If the malloc failed, just ignore (basically never gonna happen anyway, but just in case..)
+                    if (variablePtr) {
+                        if (!amountOfDependantVariables++) {
+                            dependantVariablesPtr = variablePtr;
+                        }
+                    }
+                } else if (tok == tRand) {
                     prescan.amountOfRandRoutines++;
                     prescan.modifiedIY = true;
                 } else if (tok == tSqrt) {
@@ -212,6 +230,8 @@ uint8_t getNameIconDescription(void) {
 }
 
 uint8_t parsePrescan(void) {
+    uint8_t a, amountOfChangedVariables;
+    
     // Insert C functions
     if (prescan.hasGraphxFunctions) {
         uint8_t a;
@@ -264,6 +284,25 @@ uint8_t parsePrescan(void) {
     }
     
     // Define variable types (ints and floats)
+    do {
+        amountOfChangedVariables = 0;
+        for (a = 0; a < prescan.amountOfVariablesUsed; a++) {
+            // Check amount of dependancies
+            if (prescan.variables[a].amountOfDependancies) {
+                uint8_t *variablePtr = prescan.variables[a].dependancies;
+                uint8_t b;
+                
+                // Loop through all the dependancies and check if one of them is a float
+                for (b = 0; b < prescan.variables[a].amountOfDependancies; b++) {
+                    if (prescan.variables[b].type == TYPE_FLOAT) {
+                        prescan.variables[a].type = TYPE_FLOAT;
+                        amountOfChangedVariables++;
+                        break;
+                    }
+                }
+            }
+        }
+    } while (amountOfChangedVariables);
     
     return VALID;
 }
