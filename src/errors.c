@@ -35,6 +35,7 @@ static const char *errors[] = {
     "Invalid program name",
     "Not enough memory for Lbl and Goto",
     "Error: not an ICE program\n",
+    "Error: not enough memory for variables",
     "Warning: Unknown char in the string!",
     "Warning: string has been automatically squish-ed!",
 };

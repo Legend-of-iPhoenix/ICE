@@ -18,8 +18,9 @@
 #define E_INVALID_PROG     14
 #define E_MEM_LABEL        15
 #define E_NOT_ICE_PROG     16
-#define W_WRONG_CHAR       17
-#define W_SQUISHED         18
+#define E_MEM_VARIABLES    17
+#define W_WRONG_CHAR       18
+#define W_SQUISHED         19
 
 #define VALID              255
 

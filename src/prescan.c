@@ -180,10 +180,6 @@ void preScanProgram(void) {
     }
 
     _rewind(ice.inPrgm);
-    
-    for (intDepth = 0; intDepth < prescan.amountOfVariablesUsed; intDepth++) {
-        dbg_sprintf(dbgout, "Variable: %s - type %u\n", prescan.variables[intDepth].name, prescan.variables[intDepth].type);
-    }
 }
 
 uint8_t getNameIconDescription(void) {
@@ -232,11 +228,12 @@ uint8_t getNameIconDescription(void) {
     }
     
     _rewind(ice.inPrgm);
+    
     return VALID;
 }
 
 uint8_t parsePrescan(void) {
-    uint8_t a, amountOfChangedVariables;
+    uint8_t a, amountOfChangedVariables, offset;
     
     // Insert C functions
     if (prescan.hasGraphxFunctions) {
@@ -290,7 +287,6 @@ uint8_t parsePrescan(void) {
         return E_MEM_LABEL;
     }
     
-    
     // Define variable types (ints and floats)
     do {
         amountOfChangedVariables = 0;
@@ -311,6 +307,19 @@ uint8_t parsePrescan(void) {
             }
         }
     } while (amountOfChangedVariables);
+    
+    // Set the variables offsets
+    offset = 0;
+    for (a = 0; a < prescan.amountOfVariablesUsed; a++) {
+        prescan.variables[a].offset = offset - 0x80;
+        if (prescan.variables[a].type == TYPE_FLOAT) {
+            offset++;
+        }
+        if (offset > 253) {
+            return E_MEM_VARIABLES;
+        }
+        offset += 3;
+    }
     
     return VALID;
 }
