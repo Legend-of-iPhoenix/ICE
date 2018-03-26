@@ -42,9 +42,9 @@ typedef struct {
 
 typedef struct {
     uint8_t type;
-    uint8_t offset;
     uint8_t amountOfDependancies;
     uint8_t *dependancies;
+    char offset;
     char    name[21];
 } variable_t;
 

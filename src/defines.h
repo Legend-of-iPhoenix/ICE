@@ -8,7 +8,7 @@ typedef struct {
     uint8_t  isString;
     uint8_t  type;
     uint8_t  mask;
-    uint8_t  variable;
+    uint8_t  smallOperand;
     uint24_t operand;
     float    floatOperand;
 } element_t;

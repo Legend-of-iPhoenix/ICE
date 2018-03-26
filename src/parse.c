@@ -30,7 +30,7 @@ extern const uint8_t SrandData[];
 extern const uint8_t FileiocheaderData[];
 #endif
 
-extern uint8_t (*functions[256])(int token);
+extern uint8_t (*functions[256])(uint8_t tok);
 const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4] = {
 // function / second byte / amount of arguments / allow arguments as numbers
     {tNot,      0,              1,   1},
@@ -64,6 +64,8 @@ const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4] = {
 };
 
 bool inExpression;
+extern uint24_t outputElements;
+extern uint24_t stackElements;
 
 uint8_t parseProgram(void) {
     int token;
@@ -124,10 +126,47 @@ findNextLabel:;
     return VALID;
 }
 
-uint8_t ParseNumber(int token) {
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+uint8_t ParseNumber(uint8_t tok) {
     element_t newElement;
-    uint8_t tok = token, a = 1, amountOfPts = 0;
+    uint8_t a = 1, amountOfPts = 0;
     char input[100]= {0};
+    
+    inExpression = true;
     
     // Fetch number
     input[0] = tok;
@@ -152,10 +191,11 @@ uint8_t ParseNumber(int token) {
     return VALID;
 }
 
-uint8_t ParseEE(int token) {
-    uint8_t tok;
-    uint24_t output = 0;
+uint8_t ParseEE(uint8_t tok) {
+    uint24_t output = tok;
     element_t newElement;
+    
+    inExpression = true;
 
     // Fetch hexadecimal
     while ((tok = IsHexadecimal(token = _getc())) != 16) {
@@ -170,9 +210,11 @@ uint8_t ParseEE(int token) {
     return VALID;
 }
 
-uint8_t ParsePi(int token) {
-    uint24_t output = 0;
+uint8_t ParsePi(uint8_t tok) {
+    uint24_t output = tok;
     element_t newElement;
+    
+    inExpression = true;
 
     // Fetch binary number
     while ((tok = (token = _getc())) >= t0 && tok <= t1) {
@@ -188,16 +230,110 @@ uint8_t ParsePi(int token) {
     return VALID;
 }
 
-uint8_t ParseVariable(int token) {
+uint8_t ParseChs(uint8_t tok) {
+    inExpression = true;
+    
+    tok = _getc();
+    if (tok >= t0 && tok <= t9) {
+        return ParseNumber(tok);
+    } else {
+        element_t newElement;
+        
+        newElement.type = TYPE_NUMBER;
+        newElement.floatOperand = -1;
+        outputStackPush(newElement);
+        return ParseOperator(tMul);
+    }
+}
+
+uint8_t ParseDegree(uint8_t tok) {
     element_t newElement;
     
-    // Push to the stack
-    newElement.type = TYPE_VARIABLE;
-    newElement.variable = GetVariableOffset(token);
+    inExpression = true;
+    
+    tok = _getc();
+    newElement.type = TYPE_NUMBER;
+    if (tok >= tA && tok <= tTheta) {
+        newElement.floatOperand = IX_VARIABLES + prescan.variables[GetVariableOffset(tok)].offset;
+    } else if (tok == tVarLst) {
+        newElement.floatOperand = prescan.OSLists[_getc()];
+    } else if (tok == tVarStrng) {
+        newElement.floatOperand = prescan.OSStrings[_getc()];
+    } else {
+        return E_SYNTAX;
+    }
     outputStackPush(newElement);
     
     return VALID;
 }
+
+uint8_t ParseVariable(uint8_t tok) {
+    element_t newElement;
+    
+    inExpression = true;
+    
+    // Push to the stack
+    newElement.type = TYPE_VARIABLE;
+    newElement.smallOperand = GetVariableOffset(tok);
+    outputStackPush(newElement);
+    
+    return VALID;
+}
+
+uint8_t ParseStore(uint8_t tok) {
+    inExpression = true;
+    
+    // Move entire stack to output before parsing it as an operator
+    EntireStackToOutput();
+    
+    return ParseOperator(tStore);
+}
+
+uint8_t ParseOperator(uint8_t tok) {
+    element_t newElement;
+    
+    inExpression = true;
+    
+    while (stackElements) {
+        element_t prevStackElement = stackPop();
+        
+        if (prevStackElement.type != TYPE_OPERATOR || operatorPrecedence[getIndexOfOperator(tok) - 1] > operatorPrecedence2[getIndexOfOperator(prevStackElement.smallOperand) - 1]) {
+            stackPush(prevStackElement);
+            break;
+        }
+        
+        outputStackPush(prevStackElement);
+    }
+    
+    newElement.type = TYPE_OPERATOR;
+    newElement.smallOperand = tok;
+    stackPush(newElement);
+    
+    return VALID;
+}
+
+uint8_t ParseUnimplemented(uint8_t tok) {
+    return E_UNIMPLEMENTED;
+}
+
+uint8_t ParseNewLine(uint8_t tok) {
+}
+
+void EntireStackToOutput(void) {
+    while (stackElements) {
+        outputStackPush(stackPop());
+    }
+}
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -288,87 +424,8 @@ fetchNoNewToken:
             prevTokenWasDetOrSum--;
         }
 
-        // Process a number
-        if (tok >= t0 && tok <= t9) {
-            uint24_t output = token - t0;
-
-            while ((uint8_t)(token = _getc()) >= t0 && (uint8_t)token <= t9) {
-                output = output * 10 + token - t0;
-            }
-            outputCurr->type = TYPE_NUMBER;
-            outputCurr->operand = output;
-            outputElements++;
-            mask = TYPE_MASK_U24;
-
-            if (prevTokenWasDetOrSum) {
-                stackCurr = &stackPtr[stackElements - 1];
-                stackCurr->operand = stackCurr->operand + ((uint8_t)output << 16);
-            }
-
-            // Don't grab a new token
-            continue;
-        }
-
-        // Process a hexadecimal number
-        else if (tok == tee) {
-            uint24_t output = 0;
-
-            while ((tok = IsHexadecimal(token = _getc())) != 16) {
-                output = (output << 4) + tok;
-            }
-            outputCurr->type = TYPE_NUMBER;
-            outputCurr->operand = output;
-            outputElements++;
-            mask = TYPE_MASK_U24;
-
-            // Don't grab a new token
-            continue;
-        }
-
-        // Process a binary number
-        else if (tok == tPi) {
-            uint24_t output = 0;
-
-            while ((tok = (token = _getc())) >= t0 && tok <= t1) {
-                output = (output << 1) + tok - t0;
-            }
-            outputCurr->type = TYPE_NUMBER;
-            outputCurr->operand = output;
-            outputElements++;
-            mask = TYPE_MASK_U24;
-
-            // Don't grab a new token
-            continue;
-        }
-
-        // Process a 'negative' number or expression
-        else if (tok == tChs) {
-            if ((token = _getc()) >= t0 && token <= t9) {
-                uint24_t output = token - t0;
-
-                while ((uint8_t)(token = _getc()) >= t0 && (uint8_t)token <= t9) {
-                    output = output * 10 + token - t0;
-                }
-                outputCurr->type = TYPE_NUMBER;
-                outputCurr->operand = 0-output;
-                outputElements++;
-                mask = TYPE_MASK_U24;
-
-                // Don't grab a new token
-                continue;
-            } else {
-                // Pretend as if it's a -1*
-                outputCurr->type = TYPE_NUMBER;
-                outputCurr->operand = -1;
-                outputElements++;
-                SeekMinus1();
-                token = tMul;
-                goto tokenIsOperator;
-            }
-        }
-
         // Process an OS list (number or list element)
-        else if (tok == tVarLst) {
+        if (tok == tVarLst) {
             outputCurr->type = TYPE_NUMBER;
             outputCurr->operand = prescan.OSLists[_getc()];
             outputElements++;
@@ -396,14 +453,6 @@ fetchNoNewToken:
             continue;
         }
 
-        // Process a variable
-        else if (tok >= tA && tok <= tTheta) {
-            outputCurr->type = TYPE_VARIABLE;
-            outputCurr->operand = GetVariableOffset(tok);
-            outputElements++;
-            mask = TYPE_MASK_U24;
-        }
-
         // Process a mask
         else if (tok == tMul && canUseMask) {
             uint8_t a = 0;
@@ -421,64 +470,6 @@ fetchNoNewToken:
 
             // Don't grab the { token
             continue;
-        }
-
-        // Parse an operator
-        else if ((index = getIndexOfOperator(tok))) {
-            // If the token is ->, move the entire stack to the output, instead of checking the precedence
-            if (tok == tStore) {
-                storeDepth = 2;
-                // Move entire stack to output
-                stackToOutputReturn = 1;
-                goto stackToOutput;
-            }
-tokenIsOperator:
-
-            // Move the stack to the output as long as it's not empty
-            while (stackElements) {
-                stackPrev = &stackPtr[stackElements-1];
-                outputCurr = &outputPtr[outputElements];
-
-                // Move the last entry of the stack to the ouput if it's precedence is greater than the precedence of the current token
-                if (stackPrev->type == TYPE_OPERATOR && operatorPrecedence[index - 1] <= operatorPrecedence2[getIndexOfOperator(stackPrev->operand) - 1]) {
-                    outputCurr->type = stackPrev->type;
-                    outputCurr->mask = stackPrev->mask;
-                    outputCurr->operand = stackPrev->operand;
-                    stackElements--;
-                    outputElements++;
-                } else {
-                    break;
-                }
-            }
-
-stackToOutputReturn1:
-            // Push the operator to the stack
-            stackCurr = &stackPtr[stackElements++];
-            stackCurr->type = TYPE_OPERATOR;
-            stackCurr->operand = token;
-            mask = TYPE_MASK_U24;
-            canUseMask = 2;
-        }
-
-        // Gets the address of a variable
-        else if (tok == tFromDeg) {
-            outputCurr->type = TYPE_NUMBER;
-            outputElements++;
-            mask = TYPE_MASK_U24;
-            tok = _getc();
-
-            // Get the address of the variable
-            if (tok >= tA && tok <= tTheta) {
-                char offset = GetVariableOffset(tok);
-
-                outputCurr->operand = IX_VARIABLES + offset;
-            } else if (tok == tVarLst) {
-                outputCurr->operand = prescan.OSLists[_getc()];
-            } else if (tok == tVarStrng) {
-                outputCurr->operand = prescan.OSStrings[_getc()];
-            } else {
-                return E_SYNTAX;
-            }
         }
 
         // Pop a ) } ] ,
@@ -1954,14 +1945,6 @@ static uint8_t functionBB(int token) {
     }
 }
 
-static uint8_t tokenWrongPlace(int token) {
-    return E_WRONG_PLACE;
-}
-
-static uint8_t tokenUnimplemented(int token) {
-    return E_UNIMPLEMENTED;
-}
-
 void optimizeZeroCarryFlagOutput(void) {
     if (!expr.AnsSetZeroFlag && !expr.AnsSetCarryFlag && !expr.AnsSetZeroFlagReversed && !expr.AnsSetCarryFlagReversed) {
         if (expr.outputRegister == REGISTER_HL) {
@@ -1986,261 +1969,261 @@ void skipLine(void) {
     while (!CheckEOL());
 }
 
-uint8_t (*functions[256])(int) = {
-    tokenUnimplemented, //0
-    tokenUnimplemented, //1
-    tokenUnimplemented, //2
-    tokenUnimplemented, //3
-    tokenWrongPlace,    //4
-    tokenUnimplemented, //5
-    tokenWrongPlace,    //6
-    parseExpression,    //7
-    parseExpression,    //8
-    parseExpression,    //9
-    tokenUnimplemented, //10
-    parseExpression,    //11
-    tokenUnimplemented, //12
-    tokenUnimplemented, //13
-    tokenUnimplemented, //14
-    tokenUnimplemented, //15
-    parseExpression,    //16
-    parseExpression,    //17
-    tokenUnimplemented, //18
-    tokenUnimplemented, //19
-    tokenUnimplemented, //20
-    tokenUnimplemented, //21
-    tokenUnimplemented, //22
-    tokenUnimplemented, //23
-    tokenUnimplemented, //24
-    parseExpression,    //25
-    parseExpression,    //26
-    tokenUnimplemented, //27
-    tokenUnimplemented, //28
-    tokenUnimplemented, //29
-    tokenUnimplemented, //30
-    tokenUnimplemented, //31
-    tokenUnimplemented, //32
-    parseExpression,    //33
-    tokenUnimplemented, //34
-    tokenUnimplemented, //35
-    tokenUnimplemented, //36
-    tokenUnimplemented, //37
-    tokenUnimplemented, //38
-    tokenUnimplemented, //39
-    tokenUnimplemented, //40
-    tokenUnimplemented, //41
-    parseExpression,    //42
-    tokenUnimplemented, //43
-    functionI,          //44
-    tokenUnimplemented, //45
-    tokenUnimplemented, //46
-    tokenUnimplemented, //47
-    parseExpression,    //48
-    parseExpression,    //49
-    parseExpression,    //50
-    parseExpression,    //51
-    parseExpression,    //52
-    parseExpression,    //53
-    parseExpression,    //54
-    parseExpression,    //55
-    parseExpression,    //56
-    parseExpression,    //57
-    tokenUnimplemented, //58
-    parseExpression,    //59
-    tokenWrongPlace,    //60
-    tokenWrongPlace,    //61
-    tokenUnimplemented, //62
-    dummyReturn,        //63
-    tokenWrongPlace,    //64
-    parseExpression,    //65
-    parseExpression,    //66
-    parseExpression,    //67
-    parseExpression,    //68
-    parseExpression,    //69
-    parseExpression,    //70
-    parseExpression,    //71
-    parseExpression,    //72
-    parseExpression,    //73
-    parseExpression,    //74
-    parseExpression,    //75
-    parseExpression,    //76
-    parseExpression,    //77
-    parseExpression,    //78
-    parseExpression,    //79
-    parseExpression,    //80
-    parseExpression,    //81
-    parseExpression,    //82
-    parseExpression,    //83
-    parseExpression,    //84
-    parseExpression,    //85
-    parseExpression,    //86
-    parseExpression,    //87
-    parseExpression,    //88
-    parseExpression,    //89
-    parseExpression,    //90
-    parseExpression,    //91
-    tokenUnimplemented, //92
-    parseExpression,    //93
-    tokenUnimplemented, //94
-    functionPrgm,       //95
-    tokenUnimplemented, //96
-    tokenUnimplemented, //97
-    functionCustom,     //98
-    tokenUnimplemented, //99
-    tokenUnimplemented, //100
-    tokenUnimplemented, //101
-    tokenUnimplemented, //102
-    tokenUnimplemented, //103
-    tokenUnimplemented, //104
-    tokenUnimplemented, //105
-    tokenWrongPlace,    //106
-    tokenWrongPlace,    //107
-    tokenWrongPlace,    //108
-    tokenWrongPlace,    //109
-    tokenWrongPlace,    //110
-    tokenWrongPlace,    //111
-    tokenWrongPlace,    //112
-    tokenWrongPlace,    //113
-    parseExpression,    //114
-    tokenUnimplemented, //115
-    tokenUnimplemented, //116
-    tokenUnimplemented, //117
-    tokenUnimplemented, //118
-    tokenUnimplemented, //119
-    tokenUnimplemented, //120
-    tokenUnimplemented, //121
-    tokenUnimplemented, //122
-    tokenUnimplemented, //123
-    tokenUnimplemented, //124
-    tokenUnimplemented, //125
-    tokenUnimplemented, //126
-    tokenUnimplemented, //127
-    tokenUnimplemented, //128
-    tokenUnimplemented, //129
-    parseExpression,    //130
-    tokenWrongPlace,    //131
-    tokenUnimplemented, //132
-    tokenUnimplemented, //133
-    tokenUnimplemented, //134
-    tokenUnimplemented, //135
-    tokenUnimplemented, //136
-    tokenUnimplemented, //137
-    tokenUnimplemented, //138
-    tokenUnimplemented, //139
-    tokenUnimplemented, //140
-    tokenUnimplemented, //141
-    tokenUnimplemented, //142
-    tokenUnimplemented, //143
-    tokenUnimplemented, //144
-    tokenUnimplemented, //145
-    tokenUnimplemented, //146
-    tokenUnimplemented, //147
-    tokenUnimplemented, //148
-    tokenUnimplemented, //149
-    tokenUnimplemented, //150
-    tokenUnimplemented, //151
-    tokenUnimplemented, //152
-    tokenUnimplemented, //153
-    tokenUnimplemented, //154
-    tokenUnimplemented, //155
-    tokenUnimplemented, //156
-    tokenUnimplemented, //157
-    tokenUnimplemented, //158
-    tokenUnimplemented, //159
-    tokenUnimplemented, //160
-    tokenUnimplemented, //161
-    tokenUnimplemented, //162
-    tokenUnimplemented, //163
-    tokenUnimplemented, //164
-    tokenUnimplemented, //165
-    tokenUnimplemented, //166
-    tokenUnimplemented, //167
-    tokenUnimplemented, //168
-    tokenUnimplemented, //169
-    parseExpression,    //170
-    parseExpression,    //171
-    parseExpression,    //172
-    parseExpression,    //173
-    parseExpression,    //174
-    tokenUnimplemented, //175
-    parseExpression,    //176
-    tokenUnimplemented, //177
-    tokenUnimplemented, //178
-    parseExpression,    //179
-    tokenUnimplemented, //180
-    tokenUnimplemented, //181
-    parseExpression,    //182
-    tokenUnimplemented, //183
-    parseExpression,    //184
-    tokenUnimplemented, //185
-    tokenUnimplemented, //186
-    functionBB,         //187
-    parseExpression,    //188
-    tokenUnimplemented, //189
-    tokenUnimplemented, //190
-    tokenUnimplemented, //191
-    tokenUnimplemented, //192
-    tokenUnimplemented, //193
-    parseExpression,    //194
-    tokenUnimplemented, //195
-    parseExpression,    //196
-    tokenUnimplemented, //197
-    tokenUnimplemented, //198
-    tokenUnimplemented, //199
-    tokenUnimplemented, //200
-    tokenUnimplemented, //201
-    tokenUnimplemented, //202
-    tokenUnimplemented, //203
-    tokenUnimplemented, //204
-    tokenUnimplemented, //205
-    functionIf,         //206
-    tokenUnimplemented, //207
-    functionElse,       //208
-    functionWhile,      //209
-    functionRepeat,     //210
-    functionFor,        //211
-    functionEnd,        //212
-    functionReturn,     //213
-    functionLbl,        //214
-    functionGoto,       //215
-    functionPause,      //216
-    tokenUnimplemented, //217
-    tokenUnimplemented, //218
-    tokenUnimplemented, //219
-    functionInput,      //220
-    tokenUnimplemented, //221
-    functionDisp,       //222
-    tokenUnimplemented, //223
-    functionOutput,     //224
-    functionClrHome,    //225
-    tokenUnimplemented, //226
-    tokenUnimplemented, //227
-    tokenUnimplemented, //228
-    tokenUnimplemented, //229
-    tokenUnimplemented, //230
-    tokenUnimplemented, //231
-    tokenUnimplemented, //232
-    tokenUnimplemented, //233
-    tokenUnimplemented, //234
-    tokenUnimplemented, //235
-    tokenUnimplemented, //236
-    tokenUnimplemented, //237
-    tokenUnimplemented, //238
-    parseExpression,    //239
-    parseExpression,    //240
-    tokenUnimplemented, //241
-    tokenUnimplemented, //242
-    tokenUnimplemented, //243
-    tokenUnimplemented, //244
-    tokenUnimplemented, //245
-    tokenUnimplemented, //246
-    tokenUnimplemented, //247
-    tokenUnimplemented, //248
-    tokenUnimplemented, //249
-    tokenUnimplemented, //250
-    tokenUnimplemented, //251
-    tokenUnimplemented, //252
-    tokenUnimplemented, //253
-    tokenUnimplemented, //254
-    tokenUnimplemented  //255
+uint8_t (*functions[256])(uint8_t) = {
+    ParseUnimplemented, // 0x00
+    ParseUnimplemented, // 0x01
+    ParseUnimplemented, // 0x02
+    ParseUnimplemented, // 0x03
+    ParseStore,         // 0x04
+    ParseUnimplemented, // 0x05
+    tokenWrongPlace,    // 0x06
+    parseExpression,    // 0x07
+    parseExpression,    // 0x08
+    parseExpression,    // 0x09
+    ParseUnimplemented, // 0x0A
+    parseExpression,    // 0x0B
+    ParseUnimplemented, // 0x0C
+    ParseUnimplemented, // 0x0D
+    ParseUnimplemented, // 0x0E
+    ParseUnimplemented, // 0x0F
+    parseExpression,    // 0x10
+    parseExpression,    // 0x11
+    ParseUnimplemented, // 0x12
+    ParseUnimplemented, // 0x13
+    ParseUnimplemented, // 0x14
+    ParseUnimplemented, // 0x15
+    ParseUnimplemented, // 0x16
+    ParseUnimplemented, // 0x17
+    ParseUnimplemented, // 0x18
+    parseExpression,    // 0x19
+    parseExpression,    // 0x1A
+    ParseUnimplemented, // 0x1B
+    ParseUnimplemented, // 0x1C
+    ParseUnimplemented, // 0x1D
+    ParseUnimplemented, // 0x1E
+    ParseUnimplemented, // 0x1F
+    ParseUnimplemented, // 0x20
+    parseExpression,    // 0x21
+    ParseUnimplemented, // 0x22
+    ParseUnimplemented, // 0x23
+    ParseUnimplemented, // 0x24
+    ParseUnimplemented, // 0x25
+    ParseUnimplemented, // 0x26
+    ParseUnimplemented, // 0x27
+    ParseUnimplemented, // 0x28
+    ParseUnimplemented, // 0x29
+    parseExpression,    // 0x2A
+    ParseUnimplemented, // 0x2B
+    functionI,          // 0x2C
+    ParseUnimplemented, // 0x2D
+    ParseUnimplemented, // 0x2E
+    ParseUnimplemented, // 0x2F
+    ParseNumber,        // 0x30
+    ParseNumber,        // 0x31
+    ParseNumber,        // 0x32
+    ParseNumber,        // 0x33
+    ParseNumber,        // 0x34
+    ParseNumber,        // 0x35
+    ParseNumber,        // 0x36
+    ParseNumber,        // 0x37
+    ParseNumber,        // 0x38
+    ParseNumber,        // 0x39
+    ParseNumber,        // 0x3A
+    ParseEE,            // 0x3B
+    ParseOperator,      // 0x3C
+    ParseOperator,      // 0x3D
+    ParseNewLine,       // 0x3E
+    ParseNewLine,       // 0x3F
+    ParseOperator,      // 0x40
+    ParseVariable,      // 0x41
+    ParseVariable,      // 0x42
+    ParseVariable,      // 0x43
+    ParseVariable,      // 0x44
+    ParseVariable,      // 0x45
+    ParseVariable,      // 0x46
+    ParseVariable,      // 0x47
+    ParseVariable,      // 0x48
+    ParseVariable,      // 0x49
+    ParseVariable,      // 0x4A
+    ParseVariable,      // 0x4B
+    ParseVariable,      // 0x4C
+    ParseVariable,      // 0x4D
+    ParseVariable,      // 0x4E
+    ParseVariable,      // 0x4F
+    ParseVariable,      // 0x50
+    ParseVariable,      // 0x51
+    ParseVariable,      // 0x52
+    ParseVariable,      // 0x53
+    ParseVariable,      // 0x54
+    ParseVariable,      // 0x55
+    ParseVariable,      // 0x56
+    ParseVariable,      // 0x57
+    ParseVariable,      // 0x58
+    ParseVariable,      // 0x59
+    ParseVariable,      // 0x5A
+    ParseVariable,      // 0x5B
+    ParseUnimplemented, // 0x5C
+    parseExpression,    // 0x5D
+    ParseUnimplemented, // 0x5E
+    functionPrgm,       // 0x5F
+    ParseUnimplemented, // 0x60
+    ParseUnimplemented, // 0x61
+    functionCustom,     // 0x62
+    ParseUnimplemented, // 0x63
+    ParseUnimplemented, // 0x64
+    ParseUnimplemented, // 0x65
+    ParseUnimplemented, // 0x66
+    ParseUnimplemented, // 0x67
+    ParseUnimplemented, // 0x68
+    ParseUnimplemented, // 0x69
+    ParseOperator,      // 0x6A
+    ParseOperator,      // 0x6B
+    ParseOperator,      // 0x6C
+    ParseOperator,      // 0X6D
+    ParseOperator,      // 0x6E
+    ParseOperator,      // 0x6F
+    ParseOperator,      // 0x70
+    ParseOperator,      // 0x71
+    parseExpression,    // 0x72
+    ParseUnimplemented, // 0x73
+    ParseUnimplemented, // 0x74
+    ParseUnimplemented, // 0x75
+    ParseUnimplemented, // 0x76
+    ParseUnimplemented, // 0x77
+    ParseUnimplemented, // 0x78
+    ParseUnimplemented, // 0x79
+    ParseUnimplemented, // 0x7A
+    ParseUnimplemented, // 0x7B
+    ParseUnimplemented, // 0x7C
+    ParseUnimplemented, // 0x7D
+    ParseUnimplemented, // 0x7E
+    ParseOperator,      // 0x7F
+    ParseOperator,      // 0x80
+    ParseOperator,      // 0x81
+    ParseOperator,      // 0x82
+    ParseOperator,      // 0x83
+    ParseUnimplemented, // 0x84
+    ParseUnimplemented, // 0x85
+    ParseUnimplemented, // 0x86
+    ParseUnimplemented, // 0x87
+    ParseUnimplemented, // 0x88
+    ParseUnimplemented, // 0x89
+    ParseUnimplemented, // 0x8A
+    ParseUnimplemented, // 0x8B
+    ParseUnimplemented, // 0x8C
+    ParseUnimplemented, // 0x8D
+    ParseUnimplemented, // 0x8E
+    ParseUnimplemented, // 0x8F
+    ParseUnimplemented, // 0x90
+    ParseUnimplemented, // 0x91
+    ParseUnimplemented, // 0x92
+    ParseUnimplemented, // 0x93
+    ParseUnimplemented, // 0x94
+    ParseUnimplemented, // 0x95
+    ParseUnimplemented, // 0x96
+    ParseUnimplemented, // 0x97
+    ParseUnimplemented, // 0x98
+    ParseUnimplemented, // 0x99
+    ParseUnimplemented, // 0x9A
+    ParseUnimplemented, // 0x9B
+    ParseUnimplemented, // 0x9C
+    ParseUnimplemented, // 0x9D
+    ParseUnimplemented, // 0x9E
+    ParseUnimplemented, // 0x9F
+    ParseUnimplemented, // 0xA0
+    ParseUnimplemented, // 0xA1
+    ParseUnimplemented, // 0xA2
+    ParseUnimplemented, // 0xA3
+    ParseUnimplemented, // 0xA4
+    ParseUnimplemented, // 0xA5
+    ParseUnimplemented, // 0xA6
+    ParseUnimplemented, // 0xA7
+    ParseUnimplemented, // 0xA8
+    ParseUnimplemented, // 0xA9
+    parseExpression,    // 0xAA
+    parseExpression,    // 0xAB
+    ParsePi,            // 0xAC
+    parseExpression,    // 0xAD
+    parseExpression,    // 0xAE
+    ParseUnimplemented, // 0xAF
+    ParseChs,           // 0xB0
+    ParseUnimplemented, // 0xB1
+    ParseUnimplemented, // 0xB2
+    parseExpression,    // 0xB3
+    ParseUnimplemented, // 0xB4
+    ParseUnimplemented, // 0xB5
+    parseExpression,    // 0xB6
+    ParseUnimplemented, // 0xB7
+    parseExpression,    // 0xB8
+    ParseUnimplemented, // 0xB9
+    ParseUnimplemented, // 0xBA
+    functionBB,         // 0xBB
+    parseExpression,    // 0xBC
+    ParseUnimplemented, // 0xBD
+    ParseUnimplemented, // 0xBE
+    ParseUnimplemented, // 0xBF
+    ParseUnimplemented, // 0xC0
+    ParseUnimplemented, // 0xC1
+    parseExpression,    // 0xC2
+    ParseUnimplemented, // 0xC3
+    parseExpression,    // 0xC4
+    ParseUnimplemented, // 0xC5
+    ParseUnimplemented, // 0xC6
+    ParseUnimplemented, // 0xC7
+    ParseUnimplemented, // 0xC8
+    ParseUnimplemented, // 0xC9
+    ParseUnimplemented, // 0xCA
+    ParseUnimplemented, // 0xCB
+    ParseUnimplemented, // 0xCC
+    ParseUnimplemented, // 0xCD
+    functionIf,         // 0xCE
+    ParseUnimplemented, // 0xCF
+    functionElse,       // 0xD0
+    functionWhile,      // 0xD1
+    functionRepeat,     // 0xD2
+    functionFor,        // 0xD3
+    functionEnd,        // 0xD4
+    functionReturn,     // 0xD5
+    functionLbl,        // 0xD6
+    functionGoto,       // 0xD7
+    functionPause,      // 0xD8
+    ParseUnimplemented, // 0xD9
+    ParseUnimplemented, // 0xDA
+    ParseUnimplemented, // 0xDB
+    functionInput,      // 0xDC
+    ParseUnimplemented, // 0xDD
+    functionDisp,       // 0xDE
+    ParseUnimplemented, // 0xDF
+    functionOutput,     // 0xE0
+    functionClrHome,    // 0xE1
+    ParseUnimplemented, // 0xE2
+    ParseUnimplemented, // 0xE3
+    ParseUnimplemented, // 0xE4
+    ParseUnimplemented, // 0xE5
+    ParseUnimplemented, // 0xE6
+    ParseUnimplemented, // 0xE7
+    ParseUnimplemented, // 0xE8
+    ParseUnimplemented, // 0xE9
+    ParseUnimplemented, // 0xEA
+    ParseUnimplemented, // 0xEB
+    ParseUnimplemented, // 0xEC
+    ParseUnimplemented, // 0xED
+    ParseUnimplemented, // 0xEE
+    parseExpression,    // 0xEF
+    parseExpression,    // 0xF0
+    ParseUnimplemented, // 0xF1
+    ParseUnimplemented, // 0xF2
+    ParseUnimplemented, // 0xF3
+    ParseUnimplemented, // 0xF4
+    ParseUnimplemented, // 0xF5
+    ParseUnimplemented, // 0xF6
+    ParseUnimplemented, // 0xF7
+    ParseUnimplemented, // 0xF8
+    ParseUnimplemented, // 0xF9
+    ParseUnimplemented, // 0xFA
+    ParseUnimplemented, // 0xFB
+    ParseUnimplemented, // 0xFC
+    ParseUnimplemented, // 0xFD
+    ParseUnimplemented, // 0xFE
+    ParseUnimplemented  // 0xFF
 };
