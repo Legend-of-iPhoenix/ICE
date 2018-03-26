@@ -30,11 +30,4 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex);
 uint8_t functionRepeat(int token);
 uint8_t parseProgram(void);
 
-typedef struct {
-    uint8_t  isString;
-    uint8_t  type;
-    uint8_t  mask;
-    uint24_t operand;
-} element_t;
-
 #endif

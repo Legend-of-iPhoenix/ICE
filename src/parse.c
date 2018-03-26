@@ -62,8 +62,8 @@ const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4] = {
     {tVarOut,   tLoadData,      3,   0},
     {tVarOut,   tSetBrightness, 1,   0}
 };
-element_t outputStack[400];
-element_t stack[200];
+
+bool inExpression;
 
 uint8_t parseProgram(void) {
     int token;
@@ -87,19 +87,14 @@ uint8_t parseProgram(void) {
         ProgramPtrToOffsetStack();
         CALL((uint24_t)ice.programDataPtr);
     }
+    
+    inExpression = false;
 
     // Do things based on the token
     while ((token = _getc()) != EOF) {
-        ice.lastTokenIsReturn = false;
-        ice.currentLine++;
-
         if ((ret = (*functions[token])(token)) != VALID) {
             return ret;
         }
-
-#ifdef CALCULATOR
-        displayLoadingBar();
-#endif
     }
     
     if (!ice.lastTokenIsReturn) {
@@ -129,7 +124,123 @@ findNextLabel:;
     return VALID;
 }
 
-/* Static functions */
+uint8_t ParseNumber(int token) {
+    element_t newElement;
+    uint8_t tok = token, a = 1, amountOfPts = 0;
+    char input[100]= {0};
+    
+    // Fetch number
+    input[0] = tok;
+    while (((tok = _getc()) >= t0 && tok <= t9) || tok == tDecPt) {
+        if (tok == tDecPt) {
+            amountOfPts++;
+        }
+        input[a++] = tok;
+    }
+    SeekMinus1();
+    
+    // Only 1 decimal point is allowed
+    if (amountOfPts > 1) {
+        return E_SYNTAX;
+    }
+    
+    // Push to the stack
+    newElement.type = TYPE_NUMBER;
+    newElement.floatOperand = atof(input);
+    outputStackPush(newElement);
+    
+    return VALID;
+}
+
+uint8_t ParseEE(int token) {
+    uint8_t tok;
+    uint24_t output = 0;
+    element_t newElement;
+
+    // Fetch hexadecimal
+    while ((tok = IsHexadecimal(token = _getc())) != 16) {
+        output = (output << 4) + tok;
+    }
+    SeekMinus1();
+    
+    newElement.type = TYPE_NUMBER;
+    newElement.floatOperand = output;
+    outputStackPush(newElement);
+    
+    return VALID;
+}
+
+uint8_t ParsePi(int token) {
+    uint24_t output = 0;
+    element_t newElement;
+
+    // Fetch binary number
+    while ((tok = (token = _getc())) >= t0 && tok <= t1) {
+        output = (output << 1) + tok - t0;
+    }
+    SeekMinus1();
+    
+    // Push to the stack
+    newElement.type = TYPE_NUMBER;
+    newElement.floatOperand = output;
+    outputStackPush(newElement);
+    
+    return VALID;
+}
+
+uint8_t ParseVariable(int token) {
+    element_t newElement;
+    
+    // Push to the stack
+    newElement.type = TYPE_VARIABLE;
+    newElement.variable = GetVariableOffset(token);
+    outputStackPush(newElement);
+    
+    return VALID;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 uint8_t parseExpression(int token) {
     uint24_t stackElements = 0, outputElements = 0;

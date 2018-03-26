@@ -3,6 +3,16 @@
 
 #include <stdbool.h>
 #include <stdint.h>
+
+typedef struct {
+    uint8_t  isString;
+    uint8_t  type;
+    uint8_t  mask;
+    uint8_t  variable;
+    uint24_t operand;
+    float    floatOperand;
+} element_t;
+
 #ifdef __EMSCRIPTEN__
 #include "tice.h"
 #else

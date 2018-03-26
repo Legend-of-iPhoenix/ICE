@@ -12,5 +12,10 @@ void getNextFreeStack(void);
 void removeStack(void);
 uint24_t *getStackVar(uint8_t which);
 void setStackValues(uint24_t *val1, uint24_t *val2);
+void clearStacks(void);
+void outputStackPush(element_t newEntry);
+element_t outputStackPop(void);
+void stackPush(element_t newEntry);
+element_t stackPop(void);
 
 #endif
