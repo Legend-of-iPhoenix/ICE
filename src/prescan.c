@@ -180,6 +180,10 @@ void preScanProgram(void) {
     }
 
     _rewind(ice.inPrgm);
+    
+    for (intDepth = 0; intDepth < prescan.amountOfVariablesUsed; intDepth++) {
+        dbg_sprintf(dbgout, "Variable: %s - type %u\n", prescan.variables[intDepth].name, prescan.variables[intDepth].type);
+    }
 }
 
 uint8_t getNameIconDescription(void) {
@@ -285,6 +289,7 @@ uint8_t parsePrescan(void) {
     if (!ice.LblStack || !ice.GotoStack) {
         return E_MEM_LABEL;
     }
+    
     
     // Define variable types (ints and floats)
     do {

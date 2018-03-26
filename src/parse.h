@@ -31,8 +31,8 @@ uint8_t functionRepeat(int token);
 uint8_t parseProgram(void);
 
 typedef struct {
-    uint8_t  isString : 1;
-    uint8_t  type : 7;
+    uint8_t  isString;
+    uint8_t  type;
     uint8_t  mask;
     uint24_t operand;
 } element_t;

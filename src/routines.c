@@ -351,16 +351,16 @@ void CallRoutine(bool *routineBool, uint24_t *routineAddress, const uint8_t *rou
 uint8_t GetVariableOffset(uint8_t tok) {
     char variableName[21] = {0};
     variable_t *variableNew;
-    uint8_t a = 0, b;
-
+    uint8_t a = 1, b;
+    
     variableName[0] = tok;
     while ((tok = _getc()) >= tA && tok <= tTheta) {
-        if (a < 20) {
-            variableName[a++] = tok;
-        }
+        variableName[a++] = tok;
     }
     variableName[a] = 0;
-    SeekMinus1();
+    if (tok != 0xFF) {
+        SeekMinus1();
+    }
 
     // This variable already exists, which is always true after prescanning (if everything went right..)
     for (b = 0; b < prescan.amountOfVariablesUsed; b++) {
