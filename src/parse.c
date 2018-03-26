@@ -434,6 +434,7 @@ stackToOutputReturn1:
             uint8_t *tempProgramPtr = ice.programPtr;
             uint24_t length;
 
+            outputCurr->isString = 1;
             outputCurr->type = TYPE_STRING;
             outputElements++;
             mask = TYPE_MASK_U24;
@@ -467,6 +468,7 @@ stackToOutputReturn1:
             uint8_t amountOfHexadecimals = 0;
             bool needWarning = true;
 
+            outputCurr->isString = 1;
             outputCurr->type = TYPE_STRING;
             outputElements++;
             mask = TYPE_MASK_U24;
@@ -518,7 +520,8 @@ noSquishing:
 
         // Parse an OS string
         else if (tok == tVarStrng) {
-            outputCurr->type = TYPE_OS_STRING;
+            outputCurr->isString = 1;
+            outputCurr->type = TYPE_NUMBER;
             outputCurr->operand = prescan.OSStrings[_getc()];
             outputElements++;
             mask = TYPE_MASK_U24;
@@ -593,7 +596,7 @@ stackToOutputReturn2:
         index = outputCurr->operand >> 8;
 
         // Check if the types are number | number | operator
-        if (loopIndex > 1 && (outputPrevPrev->type & 0x7F) == TYPE_NUMBER && (outputPrev->type & 0x7F) == TYPE_NUMBER &&
+        if (loopIndex > 1 && outputPrevPrev->type == TYPE_NUMBER && outputPrev->type == TYPE_NUMBER &&
                outputCurr->type == TYPE_OPERATOR && (uint8_t)outputCurr->operand != tStore) {
             // If yes, execute the operator, and store it in the first entry, and remove the other 2
             outputPrevPrev->operand = executeOperator(outputPrevPrev->operand, outputPrev->operand, (uint8_t)outputCurr->operand);
@@ -612,7 +615,7 @@ stackToOutputReturn2:
                     uint24_t outputPrevOperand = outputPrev->operand, outputPrevPrevOperand = outputPrevPrev->operand;
 
                     for (a = 1; a <= index; a++) {
-                        if (((&outputPtr[loopIndex-a])->type & 0x7F) != TYPE_NUMBER) {
+                        if ((&outputPtr[loopIndex-a])->type != TYPE_NUMBER) {
                             goto DontDeleteFunction;
                         }
                     }
@@ -821,8 +824,8 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             // Check if we can optimize StrX + "..." -> StrX
             canOptimizeConcatenateStrings = (
                 (uint8_t)(outputCurr->operand) == tAdd &&
-                outputPrevPrev->type == TYPE_OS_STRING &&
-                outputNext->type == TYPE_OS_STRING &&
+                outputPrevPrev->isString && outputPrevPrev->type == TYPE_NUMBER &&
+                outputNext->isString && outputNext->type == TYPE_NUMBER &&
                 outputNext->operand == outputPrevPrev->operand &&
                 outputNextNext->type == TYPE_OPERATOR &&
                 (uint8_t)(outputNextNext->operand) == tStore
@@ -844,12 +847,14 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 removeIndexFromStack(getCurrentIndex());
                 removeIndexFromStack(getCurrentIndex() + 1);
 
-                outputCurr->type = TYPE_OS_STRING;
+                outputCurr->isString = 1;
+                outputCurr->type = TYPE_NUMBER;
                 outputCurr->operand = outputPrevPrev->operand;
                 expr.outputIsString = true;
             } else {
                 // Check if it was a command with 2 strings, then the output is a string, not Ans
-                if ((uint8_t)outputCurr->operand == tAdd && outputPrevPrev->type >= TYPE_STRING && outputPrev->type >= TYPE_STRING) {
+                if ((uint8_t)outputCurr->operand == tAdd && outputPrevPrev->isString && outputPrev->isString) {
+                    outputCurr->isString = 1;
                     outputCurr->type = TYPE_STRING;
                     if (outputPrevPrev->operand == prescan.tempStrings[TempString2] || outputPrev->operand == prescan.tempStrings[TempString1]) {
                         outputCurr->operand = prescan.tempStrings[TempString2];
@@ -902,6 +907,7 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
                 // I don't care that this will be ignored when it's a pointer, because I know there is a -> directly after
                 // If it's a sub(, the output should be a string, not Ans
                 if ((uint8_t)outputCurr->operand == t2ByteTok && function2 == tSubStrng) {
+                    outputCurr->isString = 1;
                     outputCurr->type = TYPE_STRING;
                     if (outputPrevPrevPrev->operand == prescan.tempStrings[TempString1]) {
                         outputCurr->operand = prescan.tempStrings[TempString2];

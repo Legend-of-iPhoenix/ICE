@@ -27,7 +27,6 @@ void preScanProgram(void) {
     uint8_t *dependantVariablesPtr = NULL;
     int token;
     
-    dbg_Debugger();
     _rewind(ice.inPrgm);
 
     // Scan the entire program
@@ -72,11 +71,12 @@ void preScanProgram(void) {
                 amountOfDependantVariables = 0;
             } else if (!inString) {
                 if (tok >= tA && tok <= tTheta) {
-                    uint8_t a = GetVariableOffset(tok);
                     uint8_t *variablePtr = malloc(1);
+                    uint8_t a = GetVariableOffset(tok);
                     
                     // If the malloc failed, just ignore (basically never gonna happen anyway, but just in case..)
                     if (variablePtr) {
+                        *variablePtr = a;
                         if (!amountOfDependantVariables++) {
                             dependantVariablesPtr = variablePtr;
                         }
@@ -291,13 +291,13 @@ uint8_t parsePrescan(void) {
         amountOfChangedVariables = 0;
         for (a = 0; a < prescan.amountOfVariablesUsed; a++) {
             // Check amount of dependancies
-            if (prescan.variables[a].amountOfDependancies) {
+            if (prescan.variables[a].amountOfDependancies && prescan.variables[a].type != TYPE_FLOAT) {
                 uint8_t *variablePtr = prescan.variables[a].dependancies;
                 uint8_t b;
                 
                 // Loop through all the dependancies and check if one of them is a float
                 for (b = 0; b < prescan.variables[a].amountOfDependancies; b++) {
-                    if (prescan.variables[b].type == TYPE_FLOAT) {
+                    if (prescan.variables[variablePtr[b]].type == TYPE_FLOAT) {
                         prescan.variables[a].type = TYPE_FLOAT;
                         amountOfChangedVariables++;
                         break;

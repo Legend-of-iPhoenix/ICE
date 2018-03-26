@@ -183,8 +183,8 @@ uint8_t parseFunction(uint24_t index) {
     amountOfArguments  = output >> 8;
 
     outputPrevOperand  = outputPrev->operand;
-    outputPrevType     = outputPrev->type & 0x7F;
-    outputPrevPrevType = outputPrevPrev->type & 0x7F;
+    outputPrevType     = outputPrev->type;
+    outputPrevPrevType = outputPrevPrev->type;
 
     if (function != tNot) {
         ClearAnsFlags();
@@ -817,7 +817,7 @@ uint8_t parseFunction(uint24_t index) {
         *  arg3: size in bytes
         *****************************************************/
 
-        uint8_t outputPrevPrevPrevType = outputPrevPrevPrev->type & 0x7F;
+        uint8_t outputPrevPrevPrevType = outputPrevPrevPrev->type;
         uint24_t outputPrevPrevPrevOperand = outputPrevPrevPrev->operand;
         uint24_t outputPrevPrevOperand = outputPrevPrev->operand;
 
@@ -948,7 +948,7 @@ uint8_t parseFunction(uint24_t index) {
         * Returns: 1-, 2- or 3-byte value at address PTR
         *****************************************************/
 
-        if (outputPrevType == TYPE_NUMBER || outputPrevType == TYPE_STRING || outputPrev->type == TYPE_OS_STRING) {
+        if (outputPrevType == TYPE_NUMBER || outputPrev->isString) {
             if (outputPrevType == TYPE_STRING && outputPrevOperand != prescan.tempStrings[TempString1] && outputPrevOperand != prescan.tempStrings[TempString2]) {
                 ProgramPtrToOffsetStack();
             }
@@ -1161,7 +1161,7 @@ uint8_t parseFunction1Arg(uint24_t index, uint8_t outputRegister1) {
     outputPrevType = outputPrev->type;
     outputOperand = outputPrev->operand;
 
-    if ((outputPrevType & 0x7F) == TYPE_NUMBER) {
+    if (outputPrevType == TYPE_NUMBER) {
         LD_HL_IMM(outputOperand);
     } else if (outputPrevType == TYPE_VARIABLE) {
         LD_HL_IND_IX_OFF(outputOperand);
@@ -1188,8 +1188,8 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, bool or
     outputPrevOperand     = outputPrev->operand;
     outputPrevPrevOperand = outputPrevPrev->operand;
 
-    if ((outputPrevPrevType & 0x7F) == TYPE_NUMBER) {
-        if ((outputPrevType & 0x7F) == TYPE_NUMBER) {
+    if (outputPrevPrevType == TYPE_NUMBER) {
+        if (outputPrevType == TYPE_NUMBER) {
             LD_HL_IMM(outputPrevPrevOperand);
             if (outputReturnRegister == REGISTER_BC) {
                 LD_BC_IMM(outputPrevOperand);
@@ -1223,7 +1223,7 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, bool or
             return E_SYNTAX;
         }
     } else if (outputPrevPrevType == TYPE_VARIABLE) {
-        if ((outputPrevType & 0x7F) == TYPE_NUMBER) {
+        if (outputPrevType == TYPE_NUMBER) {
             if (orderDoesMatter) {
                 LD_HL_IND_IX_OFF(outputPrevPrevOperand);
                 if (outputReturnRegister == REGISTER_DE) {
@@ -1262,7 +1262,7 @@ uint8_t parseFunction2Args(uint24_t index, uint8_t outputReturnRegister, bool or
             return E_SYNTAX;
         }
     } else if (outputPrevPrevType == TYPE_CHAIN_ANS) {
-        if ((outputPrevType & 0x7F) == TYPE_NUMBER) {
+        if (outputPrevType == TYPE_NUMBER) {
             AnsToHL();
             if (orderDoesMatter) {
                 if (outputReturnRegister == REGISTER_DE) {

@@ -99,7 +99,6 @@ int main(int argc, char **argv) {
             // Label not found
             displayLabelError(curGoto->name);
             _seek(curGoto->offset, SEEK_SET, ice.inPrgm);
-            res = 0;
             goto stop;
 findNextLabel:;
         }
