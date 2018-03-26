@@ -1,7 +1,6 @@
 #ifndef PARSE_H
 #define PARSE_H
 
-// In case I want to add more types, be sure that TYPE_STRING will be the last one, otherwise operator.c will mess up
 #define TYPE_NUMBER          0
 #define TYPE_VARIABLE        1
 #define TYPE_CHAIN_ANS       2

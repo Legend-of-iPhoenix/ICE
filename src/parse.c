@@ -755,8 +755,14 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
 
     // It's a single entry
     if (amountOfStackElements == 1) {
+        // Expression is a string
+        if (outputCurr->isString) {
+            expr.outputIsString = true;
+            LD_HL_STRING(outputOperand, outputType);
+        }
+        
         // Expression is only a single number
-        if (outputType == TYPE_NUMBER) {
+         else if (outputType == TYPE_NUMBER) {
             // This boolean is set, because loops may be optimized when the condition is a number
             expr.outputIsNumber = true;
             expr.outputNumber = outputOperand;
@@ -771,12 +777,6 @@ uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex) {
             reg.HLIsNumber = false;
             reg.HLIsVariable = true;
             reg.HLVariable = outputOperand;
-        }
-
-        // String
-        else if (outputType >= TYPE_STRING) {
-            expr.outputIsString = true;
-            LD_HL_STRING(outputOperand, outputType);
         }
 
         // Expression is an empty function or operator, i.e. not(, +

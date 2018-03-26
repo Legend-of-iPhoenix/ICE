@@ -523,7 +523,7 @@ uint8_t parseFunction(uint24_t index) {
         uint24_t outputPrevPrevPrevOperand = outputPrevPrevPrev->operand;
 
         // First argument should be a string
-        if (outputPrevPrevPrev->type < TYPE_STRING) {
+        if (!outputPrevPrevPrev->isString) {
             return E_SYNTAX;
         }
 
@@ -707,7 +707,7 @@ uint8_t parseFunction(uint24_t index) {
             ProgramPtrToOffsetStack();
             LD_ADDR_HL(ice.LoadSpriteAddr + 27);
 
-            if (outputPrevPrevPrev->type < TYPE_STRING) {
+            if (!outputPrevPrevPrev->isString) {
                 return E_SYNTAX;
             }
             LD_HL_STRING(outputPrevPrevPrev->operand - 1, outputPrevPrevPrev->type);
@@ -745,7 +745,7 @@ uint8_t parseFunction(uint24_t index) {
             ProgramPtrToOffsetStack();
             LD_ADDR_A(ice.LoadTilemapAddr + 45);
 
-            if (outputPrevPrevPrev->type < TYPE_STRING) {
+            if (!outputPrevPrevPrev->isString) {
                 return E_SYNTAX;
             }
             LD_HL_STRING(outputPrevPrevPrev->operand - 1, outputPrevPrevPrev->type);
