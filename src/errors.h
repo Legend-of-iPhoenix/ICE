@@ -22,6 +22,7 @@
 #define W_WRONG_CHAR       18
 #define W_SQUISHED         19
 
+#define W_VALID            254
 #define VALID              255
 
 void displayLabelError(char *label);

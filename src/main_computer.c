@@ -75,33 +75,7 @@ int main(int argc, char **argv) {
 
     // Parse the program, create or empty the output program if parsing succeeded
     if ((res = parseProgram()) == VALID) {
-        uint8_t currentGoto, currentLbl;
         uint24_t previousSize = 0;
-
-        // If the last token is not "Return", write a "ret" to the program
-        if (!ice.lastTokenIsReturn) {
-            RET();
-        }
-
-        // Find all the matching Goto's/Lbl's
-        for (currentGoto = 0; currentGoto < prescan.amountOfGotos; currentGoto++) {
-            label_t *curGoto = &ice.GotoStack[currentGoto];
-
-            for (currentLbl = 0; currentLbl < prescan.amountOfLbls; currentLbl++) {
-                label_t *curLbl = &ice.LblStack[currentLbl];
-
-                if (!memcmp(curLbl->name, curGoto->name, 10)) {
-                    w24((uint8_t*)(curGoto->addr + 1), curLbl->addr - (uint24_t)ice.programData + PRGM_START);
-                    goto findNextLabel;
-                }
-            }
-
-            // Label not found
-            displayLabelError(curGoto->name);
-            _seek(curGoto->offset, SEEK_SET, ice.inPrgm);
-            goto stop;
-findNextLabel:;
-        }
 
         // Get the sizes of both stacks
         ice.programSize = (uintptr_t)ice.programPtr - (uintptr_t)ice.programData;
@@ -136,7 +110,7 @@ findNextLabel:;
         // Display the size
         fprintf(stdout, "Succesfully compiled to %s.8xp!\n", ice.outName);
         fprintf(stdout, "Output size: %u bytes\n", totalSize);
-    } else {
+    } else if (res != W_VALID) {
         displayError(res);
     }
     return 0;

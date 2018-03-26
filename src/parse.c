@@ -67,7 +67,7 @@ element_t stack[200];
 
 uint8_t parseProgram(void) {
     int token;
-    uint8_t ret = VALID;
+    uint8_t ret, currentGoto, currentLbl;
     
     LD_IX_IMM(IX_VARIABLES);
     
@@ -94,7 +94,7 @@ uint8_t parseProgram(void) {
         ice.currentLine++;
 
         if ((ret = (*functions[token])(token)) != VALID) {
-            break;
+            return ret;
         }
 
 #ifdef CALCULATOR
@@ -102,7 +102,31 @@ uint8_t parseProgram(void) {
 #endif
     }
     
-    return ret;
+    if (!ice.lastTokenIsReturn) {
+        RET();
+    }
+    
+    // Find all the matching Goto's/Lbl's
+    for (currentGoto = 0; currentGoto < prescan.amountOfGotos; currentGoto++) {
+        label_t *curGoto = &ice.GotoStack[currentGoto];
+
+        for (currentLbl = 0; currentLbl < prescan.amountOfLbls; currentLbl++) {
+            label_t *curLbl = &ice.LblStack[currentLbl];
+
+            if (!memcmp(curLbl->name, curGoto->name, 10)) {
+                w24((uint8_t*)(curGoto->addr + 1), curLbl->addr - (uint24_t)ice.programData + PRGM_START);
+                goto findNextLabel;
+            }
+        }
+
+        // Label not found
+        displayLabelError(curGoto->name);
+        _seek(curGoto->offset, SEEK_SET, ice.inPrgm);
+        return W_VALID;
+findNextLabel:;
+    }
+    
+    return VALID;
 }
 
 /* Static functions */
