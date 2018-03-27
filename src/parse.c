@@ -38,8 +38,8 @@ const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4] = {
     {tMax,      0,              2,   1},
     {tMean,     0,              2,   1},
     {tSqrt,     0,              1,   1},
-    {tDet,      0,              255, 0},
-    {tSum,      0,              255, 0},
+    {tDet,      0,              -1,  0},
+    {tSum,      0,              -1,  0},
     {tSin,      0,              1,   1},
     {tCos,      0,              1,   1},
     {tRand,     0,              0,   0},
@@ -53,17 +53,18 @@ const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4] = {
     {t2ByteTok, tSubStrng,      3,   0},
     {t2ByteTok, tLength,        1,   0},
     {t2ByteTok, tRandInt,       2,   0},
-    {tVarOut,   tDefineSprite,  255, 0},
-    {tVarOut,   tData,          255, 0},
-    {tVarOut,   tCopy,          255, 0},
+    {tVarOut,   tDefineSprite,  -1,  0},
+    {tVarOut,   tData,          -1,  0},
+    {tVarOut,   tCopy,          -1,  0},
     {tVarOut,   tAlloc,         1,   0},
-    {tVarOut,   tDefineTilemap, 255, 0},
-    {tVarOut,   tCopyData,      255, 0},
+    {tVarOut,   tDefineTilemap, -1,  0},
+    {tVarOut,   tCopyData,      -1,  0},
     {tVarOut,   tLoadData,      3,   0},
     {tVarOut,   tSetBrightness, 1,   0}
 };
 
-bool inExpression;
+bool inExpression = false;
+bool canUseMask = true;
 extern uint24_t outputElements;
 extern uint24_t stackElements;
 
@@ -167,6 +168,7 @@ uint8_t ParseNumber(uint8_t tok) {
     char input[100]= {0};
     
     inExpression = true;
+    canUseMask = false;
     
     // Fetch number
     input[0] = tok;
@@ -185,7 +187,7 @@ uint8_t ParseNumber(uint8_t tok) {
     
     // Push to the stack
     newElement.type = TYPE_NUMBER;
-    newElement.floatOperand = atof(input);
+    newElement.operand.number.value = atof(input);
     outputStackPush(newElement);
     
     return VALID;
@@ -196,6 +198,7 @@ uint8_t ParseEE(uint8_t tok) {
     element_t newElement;
     
     inExpression = true;
+    canUseMask = false;
 
     // Fetch hexadecimal
     while ((tok = IsHexadecimal(token = _getc())) != 16) {
@@ -204,7 +207,7 @@ uint8_t ParseEE(uint8_t tok) {
     SeekMinus1();
     
     newElement.type = TYPE_NUMBER;
-    newElement.floatOperand = output;
+    newElement.operand.number.value = output;
     outputStackPush(newElement);
     
     return VALID;
@@ -215,6 +218,7 @@ uint8_t ParsePi(uint8_t tok) {
     element_t newElement;
     
     inExpression = true;
+    canUseMask = false;
 
     // Fetch binary number
     while ((tok = (token = _getc())) >= t0 && tok <= t1) {
@@ -224,7 +228,7 @@ uint8_t ParsePi(uint8_t tok) {
     
     // Push to the stack
     newElement.type = TYPE_NUMBER;
-    newElement.floatOperand = output;
+    newElement.operand.number.value = output;
     outputStackPush(newElement);
     
     return VALID;
@@ -232,6 +236,7 @@ uint8_t ParsePi(uint8_t tok) {
 
 uint8_t ParseChs(uint8_t tok) {
     inExpression = true;
+    canUseMask = false;
     
     tok = _getc();
     if (tok >= t0 && tok <= t9) {
@@ -240,7 +245,7 @@ uint8_t ParseChs(uint8_t tok) {
         element_t newElement;
         
         newElement.type = TYPE_NUMBER;
-        newElement.floatOperand = -1;
+        newElement.operand.number.value = -1;
         outputStackPush(newElement);
         return ParseOperator(tMul);
     }
@@ -250,18 +255,51 @@ uint8_t ParseDegree(uint8_t tok) {
     element_t newElement;
     
     inExpression = true;
+    canUseMask = false;
     
     tok = _getc();
     newElement.type = TYPE_NUMBER;
     if (tok >= tA && tok <= tTheta) {
-        newElement.floatOperand = IX_VARIABLES + prescan.variables[GetVariableOffset(tok)].offset;
+        newElement.operand.number.value = IX_VARIABLES + prescan.variables[GetVariableOffset(tok)].offset;
     } else if (tok == tVarLst) {
-        newElement.floatOperand = prescan.OSLists[_getc()];
+        newElement.operand.number.value = prescan.OSLists[_getc()];
     } else if (tok == tVarStrng) {
-        newElement.floatOperand = prescan.OSStrings[_getc()];
+        newElement.operand.number.value = prescan.OSStrings[_getc()];
     } else {
         return E_SYNTAX;
     }
+    outputStackPush(newElement);
+    
+    return VALID;
+}
+
+uint8_t ParseOSList(uint8_t tok) {
+    element_t newElement;
+    
+    tok = _getc();
+    if (_getc() == tLParen) {
+        newElement.type = TYPE_FUNCTION;
+        newElement.operand.function.function = tVarLst;
+        newElement.operand.function.function2 = tok;
+        newElement.operand.function.mask = TYPE_MASK_U24;
+        stackPush(newElement);
+    } else {
+        newElement.type = TYPE_NUMBER;
+        newElement.operand.number.value = prescan.OSLists[tok];
+        outputStackPush(newElement);
+    }
+}
+
+uint8_t ParseOSString(uint8_t tok) {
+    element_t newElement;
+    
+    inExpression = true;
+    canUseMask = false;
+    
+    // Push to the stack
+    newElement.isString = 1;
+    newElement.type = TYPE_NUMBER;
+    newElement.operand.number.value = prescan.OSStrings[_getc()];
     outputStackPush(newElement);
     
     return VALID;
@@ -271,10 +309,11 @@ uint8_t ParseVariable(uint8_t tok) {
     element_t newElement;
     
     inExpression = true;
+    canUseMask = false;
     
     // Push to the stack
     newElement.type = TYPE_VARIABLE;
-    newElement.smallOperand = GetVariableOffset(tok);
+    newElement.operand.variable.variable = GetVariableOffset(tok);
     outputStackPush(newElement);
     
     return VALID;
@@ -290,26 +329,99 @@ uint8_t ParseStore(uint8_t tok) {
 }
 
 uint8_t ParseOperator(uint8_t tok) {
+    uint8_t precendence = operatorPrecedence[getIndexOfOperator(tok) - 1];
+    element_t newElement;
+    
+    if (tok == tMul && canUseMask) {
+        uint8_t mask = 0;
+        
+        while ((tok = _getc()) == tMul) {
+            mask++;
+        }
+        if (mask > 3 || tok != tLBrace) {
+            return E_SYNTAX;
+        }
+        
+        newElement.type = TYPE_FUNCTION;
+        newElement.operand.function.function = tLBrace;
+        newElement.operand.function.mask = TYPE_MASK_U8 + mask;
+    } else {
+        while (stackElements) {
+            element_t prevStackElement = stackPop();
+            
+            if (prevStackElement.type != TYPE_OPERATOR || precendence > prevStackElement.operand.op.precedence) {
+                stackPush(prevStackElement);
+                break;
+            }
+            
+            outputStackPush(prevStackElement);
+        }
+        
+        newElement.type = TYPE_OPERATOR;
+        newElement.operand.op.op = tok;
+        newElement.operand.op.precedence = precedence;
+    }
+    
+    stackPush(newElement);
+    
+    inExpression = canUseMask = true;
+    
+    return VALID;
+}
+
+uint8_t ParseGetkey(uint8_t tok) {
     element_t newElement;
     
     inExpression = true;
+    canUseMask = false;
     
-    while (stackElements) {
-        element_t prevStackElement = stackPop();
-        
-        if (prevStackElement.type != TYPE_OPERATOR || operatorPrecedence[getIndexOfOperator(tok) - 1] > operatorPrecedence2[getIndexOfOperator(prevStackElement.smallOperand) - 1]) {
-            stackPush(prevStackElement);
-            break;
-        }
-        
-        outputStackPush(prevStackElement);
+    newElement.type = TYPE_FUNCTION;
+    newElement.operand.function.function = tGetKey;
+    newElement.operand.function.mask = TYPE_MASK_U24;
+    if (_getc() == tLParen) {
+        stackPush(newElement);
+    } else {
+        SeekMinus1();
+        newElement.operand.function.amountOfArgs = 0;
+        outputStackPush(newElement);
     }
     
-    newElement.type = TYPE_OPERATOR;
-    newElement.smallOperand = tok;
-    stackPush(newElement);
-    
     return VALID;
+}
+
+uint8_t ParseFunction(uint8_t tok) {
+    uint8_t a, function2 = 0;;
+    element_t newElement;
+    
+    if (IsA2ByteTok(tok)) {
+        function2 = _getc();
+    }
+    
+    newElement.type = TYPE_FUNCTION;
+    newElement.operand.function.function = tok;
+    newElement.operand.function.function2 = function2;
+    newElement.operand.function.mask = TYPE_MASK_U24;
+    
+    for (a = 0; a < AMOUNT_OF_FUNCTIONS; a++) {
+        if (implementedFunctions[a][0] == tok && implementedFunctions[a][1] == function2) {
+            if (implementedFunctions[a][2]) {
+                stackPush(newElement);
+            } else {
+                newElement.operand.function.amountOfArgs = 0;
+                outputStackPush(newElement);
+            }
+            
+            return VALID;
+        }
+    }
+    
+    return E_UNIMPLEMENTED;
+}
+
+uint8_t ParseCustomTokens(uint8_t tok) {
+}
+
+uint8_t ParseBB(uint8_t tok) {
 }
 
 uint8_t ParseUnimplemented(uint8_t tok) {
@@ -317,6 +429,9 @@ uint8_t ParseUnimplemented(uint8_t tok) {
 }
 
 uint8_t ParseNewLine(uint8_t tok) {
+}
+
+uint8_t ParsePrgm(uint8_t tok) {
 }
 
 void EntireStackToOutput(void) {
@@ -391,89 +506,8 @@ uint8_t parseExpression(int token) {
     element_t *outputCurr, *outputPrev, *outputPrevPrev;
     element_t *stackCurr, *stackPrev = NULL;
 
-    /*
-        General explanation output stack and normal stack:
-        - Each entry consists of 5 bytes, the type (1), the mask (1) and the operand (3)
-        - Type: number, variable, function, operator etc
-        - Mask: 0 = 8 bits, 1 = 16 bits, 2 = 24 bits, only used for pointers
-        - The operand is either a 3-byte number or consists of these 3 bytes:
-            - The first byte = the operand: function/variable/operator token
-            - If it's a function then the second byte is the amount of arguments for that function
-            - If it's a getKeyFast, the second byte is the key
-            - If it's a 2-byte function, the third byte is the second byte of the function
-            - If it's a pointer directly after the -> operator, the third byte is 1 to ignore the function
-    */
-
-    while (token != EOF && (tok = (uint8_t)token) != tEnter) {
-fetchNoNewToken:
-        outputCurr = &outputPtr[outputElements];
-        stackCurr  = &stackPtr[stackElements];
-
-        // We can use the unsigned mask * only at the start of the line, or directly after an operator
-        if (canUseMask) {
-            canUseMask--;
-        }
-
-        // If there's a pointer directly after an -> operator, we have to ignore it
-        if (storeDepth) {
-            storeDepth--;
-        }
-
-        // If the previous token was a det( or a sum(, we need to store the next number in the stack entry too, to catch 'small arguments'
-        if (prevTokenWasDetOrSum) {
-            prevTokenWasDetOrSum--;
-        }
-
-        // Process an OS list (number or list element)
-        if (tok == tVarLst) {
-            outputCurr->type = TYPE_NUMBER;
-            outputCurr->operand = prescan.OSLists[_getc()];
-            outputElements++;
-            mask = TYPE_MASK_U24;
-
-            // Check if it's a list element
-            if ((uint8_t)(token = _getc()) == tLParen) {
-                // Trick ICE to think it's a {L1+...}
-                *++amountOfArgumentsStackPtr = 1;
-                stackCurr->type = TYPE_FUNCTION;
-                stackCurr->mask = mask;
-
-                // I have to create a non-existent token, because L1(...) the right parenthesis should pretend it's a },
-                // but that is impossible if I just push { or (. Then when a ) appears and it hits the 0x0F, just replace it with a }
-                stackCurr->operand = 0x0F + ((storeDepth && 1) << 16);
-                stackElements++;
-                mask = TYPE_MASK_U24;
-                canUseMask = 2;
-
-                // :D
-                token = tAdd;
-            }
-
-            // Don't grab next token
-            continue;
-        }
-
-        // Process a mask
-        else if (tok == tMul && canUseMask) {
-            uint8_t a = 0;
-
-            while ((uint8_t)(token = _getc()) == tMul) {
-                a++;
-            }
-            if (a > 2 || (uint8_t)token != tLBrace) {
-                return E_SYNTAX;
-            }
-            mask = TYPE_MASK_U8 + a;
-
-            // If the previous token was a ->, remind it, if not, this won't hurt
-            storeDepth++;
-
-            // Don't grab the { token
-            continue;
-        }
-
         // Pop a ) } ] ,
-        else if (tok == tRParen || tok == tComma || tok == tRBrace || tok == tRBrack) {
+        if (tok == tRParen || tok == tComma || tok == tRBrace || tok == tRBrack) {
             uint24_t temp;
 
             // Move until stack is empty or a function is encountered
@@ -536,23 +570,6 @@ fetchNoNewToken:
             }
 
             mask = TYPE_MASK_U24;
-        }
-
-        // getKey / getKey(
-        else if (tok == tGetKey) {
-            mask = TYPE_MASK_U24;
-            if ((uint8_t)(token = _getc()) == tLParen) {
-                *++amountOfArgumentsStackPtr = 1;
-                stackCurr->type = TYPE_FUNCTION;
-                stackCurr->operand = 0xAD;
-                stackElements++;
-                canUseMask = 2;
-            } else {
-                outputCurr->type = TYPE_FUNCTION;
-                outputCurr->operand = 0x0000AD;
-                outputElements++;
-                continue;
-            }
         }
 
         // Parse a string of tokens
@@ -643,66 +660,6 @@ noSquishing:
                 continue;
             }
         }
-
-        // Parse an OS string
-        else if (tok == tVarStrng) {
-            outputCurr->isString = 1;
-            outputCurr->type = TYPE_NUMBER;
-            outputCurr->operand = prescan.OSStrings[_getc()];
-            outputElements++;
-            mask = TYPE_MASK_U24;
-        }
-
-        // Parse a function
-        else {
-            uint8_t a, tok2 = 0;
-
-            if (IsA2ByteTok(tok)) {
-                tok2 = _getc();
-            }
-
-            for (a = 0; a < AMOUNT_OF_FUNCTIONS; a ++) {
-                if (tok == implementedFunctions[a][0] && tok2 == implementedFunctions[a][1]) {
-                    if (implementedFunctions[a][2]) {
-                        // We always have at least 1 argument
-                        *++amountOfArgumentsStackPtr = 1;
-                        stackCurr->type = TYPE_FUNCTION;
-                        stackCurr->mask = mask;
-                        stackCurr->operand = tok + (((tok == tLBrace && storeDepth) + tok2) << 16);
-                        stackElements++;
-                        mask = TYPE_MASK_U24;
-                        canUseMask = 2;
-
-                        // Check if it's a C function
-                        if (tok == tDet || tok == tSum) {
-                            outputCurr->type = TYPE_C_START;
-                            outputElements++;
-
-                            if ((tok = (uint8_t)(token = _getc())) < t0 || tok > t9) {
-                                return E_SYNTAX;
-                            }
-                            prevTokenWasDetOrSum = 2;
-
-                            goto fetchNoNewToken;
-                        }
-                    } else {
-                        outputCurr->type = TYPE_FUNCTION;
-                        outputCurr->operand = (tok2 << 16) + tok;
-                        outputElements++;
-                        mask = TYPE_MASK_U24;
-                    }
-
-                    goto fetchNewToken;
-                }
-            }
-
-            // Oops, unknown token...
-            return E_UNIMPLEMENTED;
-        }
-
-        // Yay, fetch the next token, it's great, it's true, I like it
-fetchNewToken:
-        token = _getc();
     }
 
     // If the expression quits normally, rather than an argument seperator
@@ -1976,9 +1933,9 @@ uint8_t (*functions[256])(uint8_t) = {
     ParseUnimplemented, // 0x03
     ParseStore,         // 0x04
     ParseUnimplemented, // 0x05
-    tokenWrongPlace,    // 0x06
+    ParseFunction,      // 0x06
     parseExpression,    // 0x07
-    parseExpression,    // 0x08
+    ParseFunction,      // 0x08
     parseExpression,    // 0x09
     ParseUnimplemented, // 0x0A
     parseExpression,    // 0x0B
@@ -1986,7 +1943,7 @@ uint8_t (*functions[256])(uint8_t) = {
     ParseUnimplemented, // 0x0D
     ParseUnimplemented, // 0x0E
     ParseUnimplemented, // 0x0F
-    parseExpression,    // 0x10
+    ParseFunction,      // 0x10
     parseExpression,    // 0x11
     ParseUnimplemented, // 0x12
     ParseUnimplemented, // 0x13
@@ -1995,15 +1952,15 @@ uint8_t (*functions[256])(uint8_t) = {
     ParseUnimplemented, // 0x16
     ParseUnimplemented, // 0x17
     ParseUnimplemented, // 0x18
-    parseExpression,    // 0x19
-    parseExpression,    // 0x1A
+    ParseFunction,      // 0x19
+    ParseFunction,      // 0x1A
     ParseUnimplemented, // 0x1B
     ParseUnimplemented, // 0x1C
     ParseUnimplemented, // 0x1D
     ParseUnimplemented, // 0x1E
     ParseUnimplemented, // 0x1F
     ParseUnimplemented, // 0x20
-    parseExpression,    // 0x21
+    ParseFunction,      // 0x21
     ParseUnimplemented, // 0x22
     ParseUnimplemented, // 0x23
     ParseUnimplemented, // 0x24
@@ -2063,12 +2020,12 @@ uint8_t (*functions[256])(uint8_t) = {
     ParseVariable,      // 0x5A
     ParseVariable,      // 0x5B
     ParseUnimplemented, // 0x5C
-    parseExpression,    // 0x5D
+    ParseOSLists,       // 0x5D
     ParseUnimplemented, // 0x5E
-    functionPrgm,       // 0x5F
+    ParsePrgm,          // 0x5F
     ParseUnimplemented, // 0x60
     ParseUnimplemented, // 0x61
-    functionCustom,     // 0x62
+    ParseCustomTokens,  // 0x62
     ParseUnimplemented, // 0x63
     ParseUnimplemented, // 0x64
     ParseUnimplemented, // 0x65
@@ -2084,7 +2041,7 @@ uint8_t (*functions[256])(uint8_t) = {
     ParseOperator,      // 0x6F
     ParseOperator,      // 0x70
     ParseOperator,      // 0x71
-    parseExpression,    // 0x72
+    ParseFunction,      // 0x72
     ParseUnimplemented, // 0x73
     ParseUnimplemented, // 0x74
     ParseUnimplemented, // 0x75
@@ -2140,10 +2097,10 @@ uint8_t (*functions[256])(uint8_t) = {
     ParseUnimplemented, // 0xA7
     ParseUnimplemented, // 0xA8
     ParseUnimplemented, // 0xA9
-    parseExpression,    // 0xAA
-    parseExpression,    // 0xAB
+    ParseOSString,      // 0xAA
+    ParseFunction,      // 0xAB
     ParsePi,            // 0xAC
-    parseExpression,    // 0xAD
+    ParseGetkey,        // 0xAD
     parseExpression,    // 0xAE
     ParseUnimplemented, // 0xAF
     ParseChs,           // 0xB0
@@ -2154,19 +2111,19 @@ uint8_t (*functions[256])(uint8_t) = {
     ParseUnimplemented, // 0xB5
     parseExpression,    // 0xB6
     ParseUnimplemented, // 0xB7
-    parseExpression,    // 0xB8
+    ParseFunction,      // 0xB8
     ParseUnimplemented, // 0xB9
     ParseUnimplemented, // 0xBA
-    functionBB,         // 0xBB
-    parseExpression,    // 0xBC
+    ParseBB,            // 0xBB
+    ParseFunction,      // 0xBC
     ParseUnimplemented, // 0xBD
     ParseUnimplemented, // 0xBE
     ParseUnimplemented, // 0xBF
     ParseUnimplemented, // 0xC0
     ParseUnimplemented, // 0xC1
-    parseExpression,    // 0xC2
+    ParseFunction,      // 0xC2
     ParseUnimplemented, // 0xC3
-    parseExpression,    // 0xC4
+    ParseFunction,      // 0xC4
     ParseUnimplemented, // 0xC5
     ParseUnimplemented, // 0xC6
     ParseUnimplemented, // 0xC7
@@ -2209,7 +2166,7 @@ uint8_t (*functions[256])(uint8_t) = {
     ParseUnimplemented, // 0xEC
     ParseUnimplemented, // 0xED
     ParseUnimplemented, // 0xEE
-    parseExpression,    // 0xEF
+    ParseFunction,      // 0xEF
     parseExpression,    // 0xF0
     ParseUnimplemented, // 0xF1
     ParseUnimplemented, // 0xF2

@@ -1,0 +1,42 @@
+C CE SDK Version 8.0 
+C:\programming\Hobby\C\ICE\src\functions.c
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(179,55) :	ERROR (152) Operands are not assignment compatible
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(185,46) :	ERROR (152) Operands are not assignment compatible
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(414,65) :	ERROR (171) Argument type is not compatible with formal parameter
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(424,44) :	ERROR (155) Left expression to "==" must be arithmetic or pointer type
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(427,171) :	ERROR (155) Left expression to "-" must be arithmetic or pointer type
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(461,66) :	ERROR (155) Left expression to "-" must be arithmetic or pointer type
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(471,61) :	ERROR (171) Argument type is not compatible with formal parameter
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(477,62) :	ERROR (155) Left expression to "-" must be arithmetic or pointer type
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(500,79) :	ERROR (155) Right expression to "-" must be arithmetic or pointer type
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(506,58) :	ERROR (171) Argument type is not compatible with formal parameter
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(523,74) :	ERROR (195) Initializer is not assignment compatible
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(557,46) :	ERROR (171) Argument type is not compatible with formal parameter
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(646,58) :	ERROR (152) Operands are not assignment compatible
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(654,62) :	ERROR (152) Operands are not assignment compatible
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(662,53) :	ERROR (171) Argument type is not compatible with formal parameter
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(696,38) :	ERROR (155) Left expression to "==" must be arithmetic or pointer type
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(706,62) :	ERROR (155) Left expression to "+" must be arithmetic or pointer type
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(713,58) :	ERROR (155) Left expression to "-" must be arithmetic or pointer type
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(733,62) :	ERROR (155) Left expression to "+" must be arithmetic or pointer type
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(739,58) :	ERROR (153) Right expression must be arithmetic type
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(744,79) :	ERROR (153) Left expression to "/" must be arithmetic type
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(751,58) :	ERROR (155) Left expression to "-" must be arithmetic or pointer type
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(775,120) :	ERROR (171) Argument type is not compatible with formal parameter
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(795,54) :	ERROR (171) Argument type is not compatible with formal parameter
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(797,57) :	ERROR (171) Argument type is not compatible with formal parameter
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(804,124) :	ERROR (171) Argument type is not compatible with formal parameter
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(821,74) :	ERROR (195) Initializer is not assignment compatible
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(822,66) :	ERROR (195) Initializer is not assignment compatible
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(894,53) :	ERROR (195) Initializer is not assignment compatible
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(895,50) :	ERROR (195) Initializer is not assignment compatible
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(920,63) :	ERROR (152) Operands are not assignment compatible
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(921,65) :	ERROR (152) Operands are not assignment compatible
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(955,36) :	ERROR (140) Identifier "mask" is not a member of NONAME0 structure
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(957,43) :	ERROR (140) Identifier "mask" is not a member of NONAME0 structure
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(966,36) :	ERROR (140) Identifier "mask" is not a member of NONAME0 structure
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(968,43) :	ERROR (140) Identifier "mask" is not a member of NONAME0 structure
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(976,36) :	ERROR (140) Identifier "mask" is not a member of NONAME0 structure
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(982,43) :	ERROR (140) Identifier "mask" is not a member of NONAME0 structure
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(994,32) :	ERROR (140) Identifier "mask" is not a member of NONAME0 structure
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\FUNCTIONS.C	(1031,57) :	ERROR (152) Operands are not assignment compatible

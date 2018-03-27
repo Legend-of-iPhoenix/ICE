@@ -4,13 +4,29 @@
 #include <stdbool.h>
 #include <stdint.h>
 
+typedef union element_operand {
+    struct number {
+        float value;
+    } number;
+    struct variable {
+        uint8_t variable;
+    } variable;
+    struct op {
+        uint8_t op;
+        uint8_t precedence;
+    } op;
+    struct function {
+        uint8_t function;
+        uint8_t function2;
+        uint8_t amountOfArgs;
+        uint8_t mask;
+    } function;
+} element_operand_t;
+
 typedef struct {
-    uint8_t  isString;
-    uint8_t  type;
-    uint8_t  mask;
-    uint8_t  smallOperand;
-    uint24_t operand;
-    float    floatOperand;
+    uint8_t isString : 1;
+    uint8_t type : 7;
+    element_operand_t operand;
 } element_t;
 
 #ifdef __EMSCRIPTEN__
