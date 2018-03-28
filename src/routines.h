@@ -26,7 +26,7 @@ uint8_t GetVariableOffset(uint8_t tok);
 bool CheckEOL(void);
 bool IsA2ByteTok(uint8_t tok);
 int getNextToken(void);
-int grabString(uint8_t **outputPtr, bool stopAtStoreAndString);
+int grabString(uint8_t **outputPtr, bool stopAtStoreAndString, bool allowSquish);
 void printButton(uint24_t xPos);
 
 #endif

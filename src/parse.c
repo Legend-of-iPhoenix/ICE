@@ -10,26 +10,6 @@
 #include "routines.h"
 #include "prescan.h"
 
-#ifdef COMPUTER_ICE
-#define INCBIN_PREFIX
-#include "incbin.h"
-INCBIN(Pause, "src/asm/pause.bin");
-INCBIN(Input, "src/asm/input.bin");
-INCBIN(Prgm, "src/asm/prgm.bin");
-INCBIN(SRand, "src/asm/srand.bin");
-
-extern char *str_dupcat(const char *s, const char *c);
-#endif
-
-#ifdef __EMSCRIPTEN__
-extern const uint8_t PauseData[];
-extern const uint8_t InputData[];
-extern const uint8_t PrgmData[];
-extern const uint8_t CheaderData[];
-extern const uint8_t SrandData[];
-extern const uint8_t FileiocheaderData[];
-#endif
-
 extern uint8_t (*functions[256])(uint8_t tok);
 const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4] = {
 // function / second byte / amount of arguments / allow arguments as numbers
@@ -64,7 +44,9 @@ const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4] = {
 };
 
 bool inExpression = false;
+bool inFunction = false;
 bool canUseMask = true;
+uint8_t returnToken;
 extern uint24_t outputElements;
 extern uint24_t stackElements;
 
@@ -91,13 +73,8 @@ uint8_t parseProgram(void) {
         CALL((uint24_t)ice.programDataPtr);
     }
     
-    inExpression = false;
-
-    // Do things based on the token
-    while ((token = _getc()) != EOF) {
-        if ((ret = (*functions[token])(token)) != VALID) {
-            return ret;
-        }
+    if ((ret = ParseUntilEnd()) != VALID) {
+        return ret;
     }
     
     if (!ice.lastTokenIsReturn) {
@@ -127,40 +104,19 @@ findNextLabel:;
     return VALID;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+uint8_t ParseUntilEnd(void) {
+    int token;
+    uint8_t ret;
+    
+    // Do things based on the token
+    while ((token = _getc()) != EOF) {
+        if ((ret = (*functions[token])(token)) != VALID) {
+            return ret;
+        }
+    }
+    
+    return VALID;
+}
 
 uint8_t ParseNumber(uint8_t tok) {
     element_t newElement;
@@ -186,8 +142,9 @@ uint8_t ParseNumber(uint8_t tok) {
     }
     
     // Push to the stack
+    newElement.needRelocate = newElement.allowStoreTo = false;
     newElement.type = TYPE_NUMBER;
-    newElement.operand.number.value = atof(input);
+    newElement.operand.numb = atof(input);
     outputStackPush(newElement);
     
     return VALID;
@@ -206,8 +163,10 @@ uint8_t ParseEE(uint8_t tok) {
     }
     SeekMinus1();
     
+    // Push to the stack
+    newElement.needRelocate = newElement.allowStoreTo = false;
     newElement.type = TYPE_NUMBER;
-    newElement.operand.number.value = output;
+    newElement.operand.num = output;
     outputStackPush(newElement);
     
     return VALID;
@@ -227,8 +186,9 @@ uint8_t ParsePi(uint8_t tok) {
     SeekMinus1();
     
     // Push to the stack
+    newElement.needRelocate = newElement.allowStoreTo = false;
     newElement.type = TYPE_NUMBER;
-    newElement.operand.number.value = output;
+    newElement.operand.num = output;
     outputStackPush(newElement);
     
     return VALID;
@@ -240,13 +200,18 @@ uint8_t ParseChs(uint8_t tok) {
     
     tok = _getc();
     if (tok >= t0 && tok <= t9) {
-        return ParseNumber(tok);
+        SeekMinus1();
+        
+        return ParseNumber(tChs);
     } else {
         element_t newElement;
         
+        // Push to the stack
+        newElement.needRelocate = newElement.allowStoreTo = false;
         newElement.type = TYPE_NUMBER;
-        newElement.operand.number.value = -1;
+        newElement.operand.num = -1;
         outputStackPush(newElement);
+        
         return ParseOperator(tMul);
     }
 }
@@ -258,13 +223,14 @@ uint8_t ParseDegree(uint8_t tok) {
     canUseMask = false;
     
     tok = _getc();
+    newElement.needRelocate = newElement.allowStoreTo = false;
     newElement.type = TYPE_NUMBER;
     if (tok >= tA && tok <= tTheta) {
-        newElement.operand.number.value = IX_VARIABLES + prescan.variables[GetVariableOffset(tok)].offset;
+        newElement.operand.num = IX_VARIABLES + prescan.variables[GetVariableOffset(tok)].offset;
     } else if (tok == tVarLst) {
-        newElement.operand.number.value = prescan.OSLists[_getc()];
+        newElement.operand.num = prescan.OSLists[_getc()];
     } else if (tok == tVarStrng) {
-        newElement.operand.number.value = prescan.OSStrings[_getc()];
+        newElement.operand.num = prescan.OSStrings[_getc()];
     } else {
         return E_SYNTAX;
     }
@@ -278,14 +244,18 @@ uint8_t ParseOSList(uint8_t tok) {
     
     tok = _getc();
     if (_getc() == tLParen) {
+        newElement.needRelocate = false;
+        newElement.allowStoreTo = true;
         newElement.type = TYPE_FUNCTION;
-        newElement.operand.function.function = tVarLst;
-        newElement.operand.function.function2 = tok;
-        newElement.operand.function.mask = TYPE_MASK_U24;
+        newElement.operand.func.function = tVarLst;
+        newElement.operand.func.function2 = tok;
+        newElement.operand.func.mask = TYPE_MASK_U24;
+        newElement.operand.func.amountOfArgs = 1;
         stackPush(newElement);
     } else {
+        SeekMinus1();
         newElement.type = TYPE_NUMBER;
-        newElement.operand.number.value = prescan.OSLists[tok];
+        newElement.operand.num = prescan.OSLists[tok];
         outputStackPush(newElement);
     }
 }
@@ -297,12 +267,24 @@ uint8_t ParseOSString(uint8_t tok) {
     canUseMask = false;
     
     // Push to the stack
-    newElement.isString = 1;
+    newElement.needRelocate = false;
+    newElement.allowStoreTo = true;
     newElement.type = TYPE_NUMBER;
-    newElement.operand.number.value = prescan.OSStrings[_getc()];
+    newElement.operand.num = prescan.OSStrings[_getc()];
     outputStackPush(newElement);
     
     return VALID;
+}
+
+uint8_t ParseString(uint8_t tok) {
+    element_t newElement;
+    
+    inExpression = true;
+    canUseMask = false;
+    
+    newElement.needRelocate = true;
+    newElement.allowStoreTo = false;
+    newElement.type = TYPE_NUMBER;
 }
 
 uint8_t ParseVariable(uint8_t tok) {
@@ -312,6 +294,8 @@ uint8_t ParseVariable(uint8_t tok) {
     canUseMask = false;
     
     // Push to the stack
+    newElement.needRelocate = false;
+    newElement.allowStoreTo = true;
     newElement.type = TYPE_VARIABLE;
     newElement.operand.variable.variable = GetVariableOffset(tok);
     outputStackPush(newElement);
@@ -319,18 +303,13 @@ uint8_t ParseVariable(uint8_t tok) {
     return VALID;
 }
 
-uint8_t ParseStore(uint8_t tok) {
-    inExpression = true;
-    
-    // Move entire stack to output before parsing it as an operator
-    EntireStackToOutput();
-    
-    return ParseOperator(tStore);
-}
-
 uint8_t ParseOperator(uint8_t tok) {
     uint8_t precendence = operatorPrecedence[getIndexOfOperator(tok) - 1];
     element_t newElement;
+    
+    if (tok == tStore) {
+        EntireStackToOutput();
+    }
     
     if (tok == tMul && canUseMask) {
         uint8_t mask = 0;
@@ -342,9 +321,12 @@ uint8_t ParseOperator(uint8_t tok) {
             return E_SYNTAX;
         }
         
+        newElement.needRelocate = false;
+        newElement.allowStoreTo = true;
         newElement.type = TYPE_FUNCTION;
         newElement.operand.function.function = tLBrace;
         newElement.operand.function.mask = TYPE_MASK_U8 + mask;
+        newElement.operand.function.amountOfArgs = 1;
     } else {
         while (stackElements) {
             element_t prevStackElement = stackPop();
@@ -357,6 +339,7 @@ uint8_t ParseOperator(uint8_t tok) {
             outputStackPush(prevStackElement);
         }
         
+        newElement.needRelocate = newElement.allowStoreTo = false;
         newElement.type = TYPE_OPERATOR;
         newElement.operand.op.op = tok;
         newElement.operand.op.precedence = precedence;
@@ -375,9 +358,11 @@ uint8_t ParseGetkey(uint8_t tok) {
     inExpression = true;
     canUseMask = false;
     
+    newElement.needRelocate = newElement.allowStoreTo = false;
     newElement.type = TYPE_FUNCTION;
     newElement.operand.function.function = tGetKey;
     newElement.operand.function.mask = TYPE_MASK_U24;
+    newElement.operand.function.amountOfArgs = 1;
     if (_getc() == tLParen) {
         stackPush(newElement);
     } else {
@@ -389,14 +374,26 @@ uint8_t ParseGetkey(uint8_t tok) {
     return VALID;
 }
 
-uint8_t ParseFunction(uint8_t tok) {
-    uint8_t a, function2 = 0;;
+uint8_t ParseDetSum(uint8_t tok) {
     element_t newElement;
+    
+    newElement.type = TYPE_FUNCTION_START;
+    outputStackPush(newElement);
+    
+    return ParseFunction(tok);
+}
+
+uint8_t ParseFunction(uint8_t tok) {
+    uint8_t a, function2 = 0;
+    element_t newElement;
+    
+    inExpression = canUseMask = true;
     
     if (IsA2ByteTok(tok)) {
         function2 = _getc();
     }
     
+    newElement.needRelocate = newElement.allowStoreTo = false;
     newElement.type = TYPE_FUNCTION;
     newElement.operand.function.function = tok;
     newElement.operand.function.function2 = function2;
@@ -405,6 +402,7 @@ uint8_t ParseFunction(uint8_t tok) {
     for (a = 0; a < AMOUNT_OF_FUNCTIONS; a++) {
         if (implementedFunctions[a][0] == tok && implementedFunctions[a][1] == function2) {
             if (implementedFunctions[a][2]) {
+                newElement.operand.function.amountOfArgs = 1;
                 stackPush(newElement);
             } else {
                 newElement.operand.function.amountOfArgs = 0;
@@ -416,6 +414,46 @@ uint8_t ParseFunction(uint8_t tok) {
     }
     
     return E_UNIMPLEMENTED;
+}
+
+uint8_t ParseCloseFunction(uint8_t tok) {
+    element_t prevElement;
+    
+    while (stackElements) {
+        prevElement = stackPop();
+        if (prevElement.type == TYPE_FUNCTION) {
+            break;
+        }
+        outputStackPush(prevElement);
+    }
+    
+    if (!stackElements) {
+        returnToken = tok;
+        
+        return E_EXTRA_PAREN;
+    } else {
+        uint8_t openingFunction = prevElement.operand.function.function;
+        
+        if ((tok == tRBrace && openingFunction != tLBrace) || 
+            (tok == tRBrack && openingFunction != tLBrack) || 
+            (tok == tRParen && (openingFunction == tLBrace || openingFunction == tLBrack))
+        ) {
+            return E_SYNTAX;
+        }
+        
+        if (tok == tComma) {
+            prevElement.operand.function.amountOfArgs++;
+            canUseMask = true;
+            stackPush(prevElement);
+            if (openingFunction == tDet || openingFunction == tSum) {
+                prevElement.type = TYPE_ARG_DELIMITER;
+                outputStackPush(prevElement);
+            }
+        } else {
+            canUseMask = false;
+            outputStackPush(prevElement);
+        }
+    }
 }
 
 uint8_t ParseCustomTokens(uint8_t tok) {
@@ -506,71 +544,6 @@ uint8_t parseExpression(int token) {
     element_t *outputCurr, *outputPrev, *outputPrevPrev;
     element_t *stackCurr, *stackPrev = NULL;
 
-        // Pop a ) } ] ,
-        if (tok == tRParen || tok == tComma || tok == tRBrace || tok == tRBrack) {
-            uint24_t temp;
-
-            // Move until stack is empty or a function is encountered
-            while (stackElements) {
-                stackPrev = &stackPtr[stackElements - 1];
-                outputCurr = &outputPtr[outputElements];
-                if (stackPrev->type != TYPE_FUNCTION) {
-                    outputCurr->type = stackPrev->type;
-                    outputCurr->mask = stackPrev->mask;
-                    outputCurr->operand = stackPrev->operand;
-                    stackElements--;
-                    outputElements++;
-                } else {
-                    break;
-                }
-            }
-
-            stackPrev = &stackPtr[stackElements - 1];
-
-            // Closing tag should match it's open tag
-            if (((tok == tRBrace || tok == tRBrack) && ((uint8_t)stackPrev->operand != token - 1)) ||
-                 (tok == tRParen && (uint8_t)stackPrev->operand != 0x0F &&
-                   ((uint8_t)stackPrev->operand == tLBrace || (uint8_t)stackPrev->operand == tLBrack))) {
-                return E_SYNTAX;
-            }
-
-            // No matching left parenthesis
-            if (!stackElements) {
-                if (expr.inFunction) {
-                    ice.tempToken = tok;
-                    goto stopParsing;
-                }
-                return E_EXTRA_RPAREN;
-            }
-
-            // If it's a det, add an argument delimiter as well
-            if (tok == tComma && ((uint8_t)stackPrev->operand == tDet || (uint8_t)stackPrev->operand == tSum)) {
-                outputCurr->type = TYPE_ARG_DELIMITER;
-                outputElements++;
-            }
-
-            // If the right parenthesis belongs to a function, move the function as well
-            if (tok != tComma) {
-                temp = (*amountOfArgumentsStackPtr--) << 8;
-                if ((uint8_t)stackPrev->operand != tLParen) {
-                    outputCurr->type = stackPrev->type;
-                    outputCurr->mask = stackPrev->mask;
-                    outputCurr->operand = stackPrev->operand + temp - ((uint8_t)stackPrev->operand == 0x0F ? 0x0F - tLBrace : 0);
-                    outputElements++;
-                }
-
-                // If you moved the function or not, it should always pop the last stack element
-                stackElements--;
-            }
-
-            // Increment the amount of arguments for that function
-            else {
-                (*amountOfArgumentsStackPtr)++;
-                canUseMask = 2;
-            }
-
-            mask = TYPE_MASK_U24;
-        }
 
         // Parse a string of tokens
         else if (tok == tAPost) {
@@ -617,7 +590,7 @@ uint8_t parseExpression(int token) {
             mask = TYPE_MASK_U24;
             stackPrev = &stackPtr[stackElements-1];
 
-            token = grabString(&ice.programPtr, true);
+            token = grabString(&ice.programPtr, true, true);
             if ((uint8_t)stackPrev->operand == tVarOut && (uint8_t)(stackPrev->operand >> 16) == tDefineSprite) {
                 needWarning = false;
             }
@@ -1931,20 +1904,20 @@ uint8_t (*functions[256])(uint8_t) = {
     ParseUnimplemented, // 0x01
     ParseUnimplemented, // 0x02
     ParseUnimplemented, // 0x03
-    ParseStore,         // 0x04
+    ParseOperator,      // 0x04
     ParseUnimplemented, // 0x05
     ParseFunction,      // 0x06
-    parseExpression,    // 0x07
+    ParseCloseFunction, // 0x07
     ParseFunction,      // 0x08
-    parseExpression,    // 0x09
+    ParseCloseFunction, // 0x09
     ParseUnimplemented, // 0x0A
-    parseExpression,    // 0x0B
+    ParseDegree,        // 0x0B
     ParseUnimplemented, // 0x0C
     ParseUnimplemented, // 0x0D
     ParseUnimplemented, // 0x0E
     ParseUnimplemented, // 0x0F
     ParseFunction,      // 0x10
-    parseExpression,    // 0x11
+    ParseCloseFunction, // 0x11
     ParseUnimplemented, // 0x12
     ParseUnimplemented, // 0x13
     ParseUnimplemented, // 0x14
@@ -1969,7 +1942,7 @@ uint8_t (*functions[256])(uint8_t) = {
     ParseUnimplemented, // 0x27
     ParseUnimplemented, // 0x28
     ParseUnimplemented, // 0x29
-    parseExpression,    // 0x2A
+    ParseString,        // 0x2A
     ParseUnimplemented, // 0x2B
     functionI,          // 0x2C
     ParseUnimplemented, // 0x2D
@@ -2106,10 +2079,10 @@ uint8_t (*functions[256])(uint8_t) = {
     ParseChs,           // 0xB0
     ParseUnimplemented, // 0xB1
     ParseUnimplemented, // 0xB2
-    parseExpression,    // 0xB3
+    ParseDetSum,        // 0xB3
     ParseUnimplemented, // 0xB4
     ParseUnimplemented, // 0xB5
-    parseExpression,    // 0xB6
+    ParseDetSum,        // 0xB6
     ParseUnimplemented, // 0xB7
     ParseFunction,      // 0xB8
     ParseUnimplemented, // 0xB9
@@ -2167,7 +2140,7 @@ uint8_t (*functions[256])(uint8_t) = {
     ParseUnimplemented, // 0xED
     ParseUnimplemented, // 0xEE
     ParseFunction,      // 0xEF
-    parseExpression,    // 0xF0
+    ParseUnimplemented, // 0xF0
     ParseUnimplemented, // 0xF1
     ParseUnimplemented, // 0xF2
     ParseUnimplemented, // 0xF3

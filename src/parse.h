@@ -7,10 +7,10 @@
 #define TYPE_CHAIN_PUSH      3
 #define TYPE_STRING          4
 
-#define TYPE_C_START         124
-#define TYPE_ARG_DELIMITER   125
-#define TYPE_OPERATOR        126
-#define TYPE_FUNCTION        127
+#define TYPE_FUNCTION_START  60
+#define TYPE_ARG_DELIMITER   61
+#define TYPE_OPERATOR        62
+#define TYPE_FUNCTION        63
 
 #define TYPE_MASK_U8         0
 #define TYPE_MASK_U16        1

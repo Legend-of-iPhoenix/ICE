@@ -10,13 +10,6 @@
 #include "routines.h"
 #include "errors.h"
 
-#ifdef COMPUTER_ICE
-#define INCBIN_PREFIX
-#include "incbin.h"
-INCBIN(Cheader, "src/asm/cheader.bin");
-INCBIN(Fileiocheader, "src/asm/fileiocheader.bin");
-#endif
-
 extern const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4];
 prescan_t prescan;
 const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};    // Thanks Cesium :D
@@ -219,7 +212,7 @@ uint8_t getNameIconDescription(void) {
 
         // Check description
         if ((uint8_t)_getc() == tii) {
-            grabString(&ice.programPtr, false);
+            grabString(&ice.programPtr, false, false);
         }
         *ice.programPtr++ = 0;
 

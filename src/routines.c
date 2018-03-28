@@ -396,14 +396,20 @@ int getNextToken(void) {
     return ti_GetC(ice.inPrgm);
 }
 
-int grabString(uint8_t **outputPtr, bool stopAtStoreAndString) {
+int grabString(uint8_t **outputPtr, bool stopAtStoreAndString, bool allowSquish) {
     void *dataPtr = ti_GetDataPtr(ice.inPrgm);
     uint24_t token;
+    uint8_t tok;
+    bool canSquish = true;
 
-    while ((token = _getc()) != EOF && !(stopAtStoreAndString && ((uint8_t)token == tString || (uint8_t)token == tStore)) && (uint8_t)token != tEnter) {
+    while ((tok = (token = _getc())) != EOF && !(stopAtStoreAndString && (tok == tString || tok == tStore)) && tok != tEnter) {
         uint24_t strLength, a;
         const char *dataString;
         uint8_t tokSize;
+        
+        if ((tok < t0 || tok > t9) && (tok < tA || tok > tF)) {
+            canSquish = false;
+        }
 
         // Get the token in characters, and copy to the output
         dataString = ti_GetTokenString(&dataPtr, &tokSize, &strLength);

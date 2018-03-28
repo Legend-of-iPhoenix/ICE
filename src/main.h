@@ -207,7 +207,8 @@ extern prescan_t prescan;
 extern reg_t reg;
 extern variable_t variable;
 
-#if !defined(COMPUTER_ICE) && !defined(__EMSCRIPTEN__)
+#ifdef CALCULATOR
+
 void CheaderData(void);
 void GraphxHeader(void);
 void FileiocheaderData(void);
@@ -234,6 +235,50 @@ void SqrtData(void);
 void PauseData(void);
 void GotoEditor(char*, uint16_t);
 void RunPrgm(char*);
+
+#elif defined(COMPUTER_ICE)
+
+#define INCBIN_PREFIX
+#include "incbin.h"
+INCBIN(Cheader, "src/asm/cheader.bin");
+INCBIN(Fileiocheader, "src/asm/fileiocheader.bin");
+INCBIN(Pause, "src/asm/pause.bin");
+INCBIN(Input, "src/asm/input.bin");
+INCBIN(Prgm, "src/asm/prgm.bin");
+INCBIN(SRand, "src/asm/srand.bin");
+INCBIN(Sqrt, "src/asm/sqrt.bin");
+INCBIN(Mean, "src/asm/mean.bin");
+INCBIN(Rand, "src/asm/rand.bin");
+INCBIN(Timer, "src/asm/timer.bin");
+INCBIN(Malloc, "src/asm/malloc.bin");
+INCBIN(Sincos, "src/asm/sincos.bin");
+INCBIN(Keypad, "src/asm/keypad.bin");
+INCBIN(Loadsprite, "src/asm/loadsprite.bin");
+INCBIN(Loadtilemap, "src/asm/loadtilemap.bin");
+INCBIN(And, "src/asm/and.bin");
+INCBIN(Or, "src/asm/or.bin");
+INCBIN(Xor, "src/asm/xor.bin");
+
+#else
+
+const uint8_t PauseData[];
+const uint8_t InputData[];
+const uint8_t PrgmData[];
+const uint8_t CheaderData[];
+const uint8_t SrandData[];
+const uint8_t FileiocheaderData[];
+const uint8_t SqrtData[];
+const uint8_t MeanData[];
+const uint8_t RandData[];
+const uint8_t TimerData[];
+const uint8_t MallocData[];
+const uint8_t SincosData[];
+const uint8_t KeypadData[];
+const uint8_t LoadspriteData[];
+const uint8_t LoadtilemapData[];
+const uint8_t AndData[];
+const uint8_t OrData[];
+const uint8_t XorData[];
 #endif
 
 #endif

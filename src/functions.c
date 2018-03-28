@@ -10,43 +10,6 @@
 #include "routines.h"
 #include "prescan.h"
 
-#ifdef COMPUTER_ICE
-#define INCBIN_PREFIX
-#include "incbin.h"
-INCBIN(Sqrt, "src/asm/sqrt.bin");
-INCBIN(Mean, "src/asm/mean.bin");
-INCBIN(Rand, "src/asm/rand.bin");
-INCBIN(Timer, "src/asm/timer.bin");
-INCBIN(Malloc, "src/asm/malloc.bin");
-INCBIN(Sincos, "src/asm/sincos.bin");
-INCBIN(Keypad, "src/asm/keypad.bin");
-INCBIN(Loadsprite, "src/asm/loadsprite.bin");
-INCBIN(Loadtilemap, "src/asm/loadtilemap.bin");
-#endif
-
-#ifdef __EMSCRIPTEN__
-extern const uint8_t SqrtData[];
-extern const uint8_t MeanData[];
-extern const uint8_t RandData[];
-extern const uint8_t TimerData[];
-extern const uint8_t MallocData[];
-extern const uint8_t SincosData[];
-extern const uint8_t KeypadData[];
-extern const uint8_t LoadspriteData[];
-extern const uint8_t LoadtilemapData[];
-#endif
-
-/* First byte:  bit 7  : returns something in A
-                bit 6  : unimplemented
-                bit 5  : returns something in HL (16 bits)
-                bit 4  : deprecated
-                bit 2-0: amount of arguments needed
-   Second byte: bit 7  : first argument is small
-                bit 6  : second argument is small
-                bit 5  : third argument is small
-                ...
-*/
-
 const uint8_t GraphxArgs[] = {
     RET_NONE | 0, ARG_NORM,    // Begin
     RET_NONE | 0, ARG_NORM,    // End

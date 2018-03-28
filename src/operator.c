@@ -10,20 +10,6 @@
 #include "routines.h"
 #include "prescan.h"
 
-#ifdef COMPUTER_ICE
-#define INCBIN_PREFIX
-#include "incbin.h"
-INCBIN(And, "src/asm/and.bin");
-INCBIN(Or, "src/asm/or.bin");
-INCBIN(Xor, "src/asm/xor.bin");
-#endif
-
-#ifdef __EMSCRIPTEN__
-extern const uint8_t AndData[];
-extern const uint8_t OrData[];
-extern const uint8_t XorData[];
-#endif
-
 extern void (*operatorFunctions[272])(void);
 extern void (*operatorChainPushChainAnsFunctions[17])(void);
 const char operators[]              = {tStore, tDotIcon, tCrossIcon, tBoxIcon, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
