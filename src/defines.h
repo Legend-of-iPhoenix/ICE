@@ -13,8 +13,8 @@ typedef struct op {
 } op_t;
  
 typedef struct function {
-    uint8_t function;
-    uint8_t function2;
+    uint8_t index;
+    uint8_t offset;
     uint8_t amountOfArgs;
     uint8_t mask;
 } func_t;

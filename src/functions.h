@@ -22,9 +22,9 @@
 #define SMALL_34      (SMALL_3 | SMALL_4)
 #define SMALL_345     (SMALL_3 | SMALL_45)
 
-#define AMOUNT_OF_FUNCTIONS 28
+#define AMOUNT_OF_FUNCTIONS 30
 
-extern const uint8_t functions[AMOUNT_OF_FUNCTIONS][4];
+extern const uint8_t functions[][4];
 
 float execFunc(uint8_t func, float operand1, float operand2);
 uint8_t compileFunction(uint24_t index);

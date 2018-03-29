@@ -129,8 +129,12 @@ const uint8_t FileiocArgs[] = {
     RET_HL   | 3, SMALL_3,     // DetectVar
 };
 
-const uint8_t functions[AMOUNT_OF_FUNCTIONS][4] = {
+const uint8_t functions[][4] = {
 // function / second byte / amount of arguments / disallow arguments as numbers
+    {tLBrace,   0,              1,   0},
+    {tVarLst,   0,              1,   0},
+    {tGetKey,   0,              -1,  0},
+/* Never change the first 3 elements of this function array, these indexes are hardcoded and important! */
     {tNot,      0,              1,   1},
     {tMin,      0,              2,   1},
     {tMax,      0,              2,   1},
@@ -143,7 +147,6 @@ const uint8_t functions[AMOUNT_OF_FUNCTIONS][4] = {
     {tRand,     0,              0,   0},
     {tAns,      0,              0,   0},
     {tLParen,   0,              1,   0},
-    {tLBrace,   0,              1,   0},
     {tLBrack,   0,              1,   0},
     {tExtTok,   tRemainder,     2,   1},
     {tExtTok,   tCheckTmr,      2,   0},

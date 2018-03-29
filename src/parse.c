@@ -115,7 +115,6 @@ uint8_t ParseNumber(uint8_t tok) {
     }
     
     // Push to the stack
-    newElement.needRelocate = newElement.allowStoreTo = false;
     newElement.type = TYPE_NUMBER;
     newElement.operand.num = atof(input);
     outputStackPush(newElement);
@@ -137,7 +136,6 @@ uint8_t ParseEE(uint8_t tok) {
     SeekMinus1();
     
     // Push to the stack
-    newElement.needRelocate = newElement.allowStoreTo = false;
     newElement.type = TYPE_NUMBER;
     newElement.operand.num = output;
     outputStackPush(newElement);
@@ -159,7 +157,6 @@ uint8_t ParsePi(uint8_t tok) {
     SeekMinus1();
     
     // Push to the stack
-    newElement.needRelocate = newElement.allowStoreTo = false;
     newElement.type = TYPE_NUMBER;
     newElement.operand.num = output;
     outputStackPush(newElement);
@@ -180,7 +177,6 @@ uint8_t ParseChs(uint8_t tok) {
         element_t newElement = {0};
         
         // Push to the stack
-        newElement.needRelocate = newElement.allowStoreTo = false;
         newElement.type = TYPE_NUMBER;
         newElement.operand.num = -1;
         outputStackPush(newElement);
@@ -196,7 +192,6 @@ uint8_t ParseDegree(uint8_t tok) {
     canUseMask = false;
     
     tok = _getc();
-    newElement.needRelocate = newElement.allowStoreTo = false;
     newElement.type = TYPE_NUMBER;
     if (tok >= tA && tok <= tTheta) {
         newElement.operand.num = IX_VARIABLES + prescan.variables[GetVariableOffset(tok)].offset;
@@ -215,21 +210,19 @@ uint8_t ParseDegree(uint8_t tok) {
 uint8_t ParseOSList(uint8_t tok) {
     element_t newElement = {0};
     
-    newElement.needRelocate = false;
     tok = _getc();
     
     // Element of list
     if (_getc() == tLParen) {
         newElement.allowStoreTo = true;
         newElement.type = TYPE_FUNCTION;
-        newElement.operand.func.function = tVarLst;
-        newElement.operand.func.function2 = tok;
+        newElement.operand.func.index = 1;
+        newElement.operand.func.offset = tok;
         newElement.operand.func.mask = TYPE_MASK_U24;
         newElement.operand.func.amountOfArgs = 1;
         stackPush(newElement);
     } else {
         SeekMinus1();
-        newElement.allowStoreTo = false;
         newElement.type = TYPE_NUMBER;
         newElement.operand.num = prescan.OSLists[tok];
         outputStackPush(newElement);
@@ -245,7 +238,6 @@ uint8_t ParseOSString(uint8_t tok) {
     canUseMask = false;
     
     // Push to the stack
-    newElement.needRelocate = false;
     newElement.allowStoreTo = true;
     newElement.type = TYPE_NUMBER;
     newElement.operand.num = prescan.OSStrings[_getc()];
@@ -261,7 +253,6 @@ uint8_t ParseString(uint8_t tok) {
     canUseMask = false;
     
     newElement.needRelocate = true;
-    newElement.allowStoreTo = false;
     newElement.type = TYPE_NUMBER;
     
     return VALID;
@@ -274,7 +265,6 @@ uint8_t ParseVariable(uint8_t tok) {
     canUseMask = false;
     
     // Push to the stack
-    newElement.needRelocate = false;
     newElement.allowStoreTo = true;
     newElement.type = TYPE_VARIABLE;
     newElement.operand.var = GetVariableOffset(tok);
@@ -301,10 +291,9 @@ uint8_t ParseOperator(uint8_t tok) {
             return E_SYNTAX;
         }
         
-        newElement.needRelocate = false;
         newElement.allowStoreTo = true;
         newElement.type = TYPE_FUNCTION;
-        newElement.operand.func.function = tLBrace;
+        newElement.operand.func.index = 0;
         newElement.operand.func.mask = TYPE_MASK_U8 + mask;
         newElement.operand.func.amountOfArgs = 1;
     } else {
@@ -319,7 +308,6 @@ uint8_t ParseOperator(uint8_t tok) {
             outputStackPush(prevStackElement);
         }
         
-        newElement.needRelocate = newElement.allowStoreTo = false;
         newElement.type = TYPE_OPERATOR;
         newElement.operand.op.type = tok;
         newElement.operand.op.precedence = precedence;
@@ -338,9 +326,8 @@ uint8_t ParseGetkey(uint8_t tok) {
     inExpression = true;
     canUseMask = false;
     
-    newElement.needRelocate = newElement.allowStoreTo = false;
     newElement.type = TYPE_FUNCTION;
-    newElement.operand.func.function = tGetKey;
+    newElement.operand.func.index = 2;
     newElement.operand.func.mask = TYPE_MASK_U24;
     newElement.operand.func.amountOfArgs = 1;
     if (_getc() == tLParen) {
@@ -357,7 +344,6 @@ uint8_t ParseGetkey(uint8_t tok) {
 uint8_t ParseDetSum(uint8_t tok) {
     element_t newElement = {0};
     
-    newElement.allowStoreTo = false;
     newElement.type = TYPE_FUNCTION_START;
     outputStackPush(newElement);
     
@@ -374,14 +360,12 @@ uint8_t ParseFunction(uint8_t tok) {
         function2 = _getc();
     }
     
-    newElement.needRelocate = newElement.allowStoreTo = false;
     newElement.type = TYPE_FUNCTION;
-    newElement.operand.func.function = tok;
-    newElement.operand.func.function2 = function2;
     newElement.operand.func.mask = TYPE_MASK_U24;
     
     for (a = 0; a < AMOUNT_OF_FUNCTIONS; a++) {
         if (functions[a][0] == tok && functions[a][1] == function2) {
+            newElement.operand.func.index = a;
             if (functions[a][2]) {
                 newElement.operand.func.amountOfArgs = 1;
                 stackPush(newElement);
@@ -418,7 +402,7 @@ uint8_t ParseCloseFunction(uint8_t tok) {
             return E_EXTRA_PAREN;
         }
     } else {
-        uint8_t openingFunction = prevElement.operand.func.function;
+        uint8_t openingFunction = functions[prevElement.operand.func.index][0];
         
         if ((tok == tRBrace && openingFunction != tLBrace) || 
             (tok == tRBrack && openingFunction != tLBrack) || 
@@ -564,30 +548,27 @@ void OptimizeExpression(void) {
         
         // Check for number | number | ... | function
         if (outputCurr.type == TYPE_FUNCTION) {
+            uint8_t functionIndex = outputCurr.operand.func.index;
             uint8_t amountOfArgs = outputCurr.operand.func.amountOfArgs, a;
-            uint8_t function = outputCurr.operand.func.function;
+            uint8_t function = functions[functionIndex][0];
             
-            // Enough arguments
-            if (amountOfArgs <= index) {
-                for (a = 0; a < AMOUNT_OF_FUNCTIONS; a++) {
-                    if (functions[a][0] == function && functions[a][1] == outputCurr.operand.func.function2 && functions[a][3]) {
-                        // Both arguments should be a number
-                        if (outputPrev.type == TYPE_NUMBER && (amountOfArgs == 1 || outputPrevPrev.type == TYPE_NUMBER)) {
-                            removeOutputElement(index);
-                            
-                            // Parse and store
-                            if (amountOfArgs == 1) {
-                                outputPrev.operand.num = execFunc(function, 0, outputPrev.operand.num);
-                                index--;
-                            } else {
-                                outputPrevPrev.operand.num = execFunc(function, outputPrevPrev.operand.num, outputPrev.operand.num);
-                                removeOutputElement(index - 1);
-                                index -= 2;
-                            }
-                            
-                            continue;
-                        }
+            // Enough arguments and allow to change
+            if (amountOfArgs <= index && functions[functionIndex][3]) {
+                // Both arguments should be a number
+                if (outputPrev.type == TYPE_NUMBER && (amountOfArgs == 1 || outputPrevPrev.type == TYPE_NUMBER)) {
+                    removeOutputElement(index);
+                    
+                    // Parse and store
+                    if (amountOfArgs == 1) {
+                        outputPrev.operand.num = execFunc(function, 0, outputPrev.operand.num);
+                        index--;
+                    } else {
+                        outputPrevPrev.operand.num = execFunc(function, outputPrevPrev.operand.num, outputPrev.operand.num);
+                        removeOutputElement(index - 1);
+                        index -= 2;
                     }
+                    
+                    continue;
                 }
             }
         }
