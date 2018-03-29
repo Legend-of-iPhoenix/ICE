@@ -1,33 +1,36 @@
 #ifndef PARSE_H
 #define PARSE_H
 
-#define TYPE_NUMBER          0
-#define TYPE_VARIABLE        1
-#define TYPE_CHAIN_ANS       2
-#define TYPE_CHAIN_PUSH      3
-#define TYPE_STRING          4
+enum {
+    TYPE_NUMBER,
+    TYPE_VARIABLE,
+    TYPE_CHAIN_ANS,
+    TYPE_CHAIN_PUSH,
+    TYPE_FUNCTION_START,
+    TYPE_ARG_DELIMITER,
+    TYPE_OPERATOR,
+    TYPE_FUNCTION
+};
 
-#define TYPE_FUNCTION_START  60
-#define TYPE_ARG_DELIMITER   61
-#define TYPE_OPERATOR        62
-#define TYPE_FUNCTION        63
+enum {
+    TYPE_MASK_U8,
+    TYPE_MASK_U16,
+    TYPE_MASK_U24
+};
 
-#define TYPE_MASK_U8         0
-#define TYPE_MASK_U16        1
-#define TYPE_MASK_U24        2
+enum {
+    TYPE_BYTE,
+    TYPE_INT,
+    TYPE_FLOAT
+};
 
-#define TYPE_BYTE            0
-#define TYPE_INT             1
-#define TYPE_FLOAT           2
-
-uint8_t JumpForward(uint8_t *startAddr, uint8_t *endAddr, uint24_t tempDataOffsetElements, uint8_t tempGotoElements, uint8_t tempLblElements);
-uint8_t JumpBackwards(uint8_t *startAddr, uint8_t whichOpcode);
-void optimizeZeroCarryFlagOutput(void);
 void skipLine(void);
-void insertGotoLabel(void);
-
-uint8_t parsePostFixFromIndexToIndex(uint24_t startIndex, uint24_t endIndex);
-uint8_t functionRepeat(int token);
-uint8_t parseProgram(void);
+void EntireStackToOutput(void);
+uint8_t ParseProgram(void);
+uint8_t ParseUntilEnd(void);
+uint8_t ParseNewLine(uint8_t tok);
+uint8_t ParseOperator(uint8_t tok);
+uint8_t ParseFunction(uint8_t tok);
+uint8_t ParseExpression(void);
 
 #endif

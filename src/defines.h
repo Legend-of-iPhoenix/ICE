@@ -4,8 +4,8 @@
 #include <stdbool.h>
 #include <stdint.h>
 
-typedef number_t float;
-typedef variable_t uint8_t;
+typedef float num_t;
+typedef uint8_t vari_t;
  
 typedef struct op {
     uint8_t type;
@@ -17,17 +17,17 @@ typedef struct function {
     uint8_t function2;
     uint8_t amountOfArgs;
     uint8_t mask;
-} function_t;
+} func_t;
  
 typedef struct {
     bool needRelocate;
     bool allowStoreTo;
     uint8_t type;
     union operand {
-        function_t func;
+        func_t func;
         op_t op;
-        variable_t var;
-        number_t num;
+        vari_t var;
+        num_t num;
     } operand;
 } element_t;
 

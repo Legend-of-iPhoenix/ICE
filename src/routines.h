@@ -1,9 +1,12 @@
 #ifndef ROUTINES_H
 #define ROUTINES_H
 
+int getNextToken(void);
+int grabString(uint8_t **outputPtr, bool stopAtStoreAndString, bool allowSquish);
+bool CheckEOL(void);
+bool IsA2ByteTok(uint8_t tok);
 void ProgramPtrToOffsetStack(void);
 void displayLoadingBarFrame(void);
-prog_t *GetProgramName(void);
 void SeekMinus1(void);
 void displayLoadingBar(void);
 void ClearAnsFlags(void);
@@ -21,12 +24,9 @@ void displayMessageLineScroll(char *string);
 void MaybeAToHL(void);
 void MaybeLDIYFlags(void);
 void CallRoutine(bool *routineBool, uint24_t *routineAddress, const uint8_t *routineData, uint8_t routineLength, uint8_t amountOfRoutine);
+void printButton(uint24_t xPos);
+prog_t *GetProgramName(void);
 uint8_t IsHexadecimal(int token);
 uint8_t GetVariableOffset(uint8_t tok);
-bool CheckEOL(void);
-bool IsA2ByteTok(uint8_t tok);
-int getNextToken(void);
-int grabString(uint8_t **outputPtr, bool stopAtStoreAndString, bool allowSquish);
-void printButton(uint24_t xPos);
 
 #endif
