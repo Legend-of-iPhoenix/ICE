@@ -1319,7 +1319,6 @@ int grabString(uint8_t **outputPtr, bool stopAtStoreAndString) {
     }
 }
 
-
 #ifdef COMPUTER_ICE
 
 int getNextToken(void) {

@@ -12,7 +12,7 @@
 
 extern void (*operatorFunctions[272])(void);
 extern void (*operatorChainPushChainAnsFunctions[17])(void);
-const uint8_t operators[17]           = {tStore, tDotIcon, tCrossIcon, tBoxIcon, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub};
+const char operators[18]              = {tStore, tDotIcon, tCrossIcon, tBoxIcon, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub, 0};
 const uint8_t operatorPrecedence[17]  = {0, 6, 8, 8, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
 const uint8_t operatorPrecedence2[17] = {9, 6, 8, 8, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
 const uint8_t operatorCanSwap[17]     = {0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0}; // Used for operators which can swap the operands, i.e. A*B = B*A
@@ -78,7 +78,7 @@ void MultWithNumber(uint24_t num, uint8_t *programPtr, bool ChangeRegisters) {
 #endif
 
 uint8_t getIndexOfOperator(uint8_t op) {
-    return memchr(operators, op, sizeof(operators)) && 1;
+    return strchr(operators, op) - operators;
 }
 
 float execOp(uint8_t op, float operand1, float operand2) {
@@ -118,4 +118,8 @@ float execOp(uint8_t op, float operand1, float operand2) {
         default:
             return 0;
     }
+}
+
+uint8_t compileOperator(uint24_t index) {
+    return VALID;
 }

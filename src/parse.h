@@ -26,6 +26,7 @@ enum {
 
 void skipLine(void);
 void EntireStackToOutput(void);
+void OptimizeExpression(void);
 uint8_t ParseProgram(void);
 uint8_t ParseUntilEnd(void);
 uint8_t ParseNewLine(uint8_t tok);

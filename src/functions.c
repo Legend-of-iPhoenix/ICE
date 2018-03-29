@@ -129,6 +129,38 @@ const uint8_t FileiocArgs[] = {
     RET_HL   | 3, SMALL_3,     // DetectVar
 };
 
+const uint8_t functions[AMOUNT_OF_FUNCTIONS][4] = {
+// function / second byte / amount of arguments / disallow arguments as numbers
+    {tNot,      0,              1,   1},
+    {tMin,      0,              2,   1},
+    {tMax,      0,              2,   1},
+    {tMean,     0,              2,   1},
+    {tSqrt,     0,              1,   1},
+    {tDet,      0,              -1,  0},
+    {tSum,      0,              -1,  0},
+    {tSin,      0,              1,   1},
+    {tCos,      0,              1,   1},
+    {tRand,     0,              0,   0},
+    {tAns,      0,              0,   0},
+    {tLParen,   0,              1,   0},
+    {tLBrace,   0,              1,   0},
+    {tLBrack,   0,              1,   0},
+    {tExtTok,   tRemainder,     2,   1},
+    {tExtTok,   tCheckTmr,      2,   0},
+    {tExtTok,   tStartTmr,      0,   0},
+    {t2ByteTok, tSubStrng,      3,   0},
+    {t2ByteTok, tLength,        1,   0},
+    {t2ByteTok, tRandInt,       2,   0},
+    {tVarOut,   tDefineSprite,  -1,  0},
+    {tVarOut,   tData,          -1,  0},
+    {tVarOut,   tCopy,          -1,  0},
+    {tVarOut,   tAlloc,         1,   0},
+    {tVarOut,   tDefineTilemap, -1,  0},
+    {tVarOut,   tCopyData,      -1,  0},
+    {tVarOut,   tLoadData,      3,   0},
+    {tVarOut,   tSetBrightness, 1,   0}
+};
+
 float execFunc(uint8_t func, float operand1, float operand2) {
     switch (func) {
         case tNot:
@@ -142,12 +174,16 @@ float execFunc(uint8_t func, float operand1, float operand2) {
         case tSqrt:
             return sqrt(operand2);
         case tSin:
-            return sin(operand2);
+            return 255 * sin(operand2 * (2 * M_PI / 256));
         case tCos:
-            return cos(operand2);
+            return 255 * cos(operand2 * (2 * M_PI / 256));
         case tExtTok:
             return (float)((uint24_t)operand1 % (uint24_t)operand2);
         default:
             return 0;
     }
+}
+
+uint8_t compileFunction(uint24_t index) {
+    return VALID;
 }

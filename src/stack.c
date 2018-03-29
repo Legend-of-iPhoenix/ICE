@@ -27,15 +27,15 @@ element_t outputStackPop(void) {
     return outputStack[--outputElements];
 }
 
-element_t getOutputElement(int index) {
+element_t getOutputElement(uint24_t index) {
     return outputStack[index];
 }
 
-void setOutputElement(element_t newEntry, int index) {
+void setOutputElement(element_t newEntry, uint24_t index) {
     outputStack[index] = newEntry;
 }
 
-void removeOutputElement(int index) {
+void removeOutputElement(uint24_t index) {
     if (index != outputElements - 1) {
         memcpy(&outputStack[index], &outputStack[index + 1], sizeof(element_t) * (outputElements - index));
     }

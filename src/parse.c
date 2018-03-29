@@ -10,44 +10,12 @@
 #include "routines.h"
 #include "prescan.h"
 
-const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4] = {
-// function / second byte / amount of arguments / disallow arguments as numbers
-    {tNot,      0,              1,   1},
-    {tMin,      0,              2,   1},
-    {tMax,      0,              2,   1},
-    {tMean,     0,              2,   1},
-    {tSqrt,     0,              1,   1},
-    {tDet,      0,              -1,  0},
-    {tSum,      0,              -1,  0},
-    {tSin,      0,              1,   1},
-    {tCos,      0,              1,   1},
-    {tRand,     0,              0,   0},
-    {tAns,      0,              0,   0},
-    {tLParen,   0,              1,   0},
-    {tLBrace,   0,              1,   0},
-    {tLBrack,   0,              1,   0},
-    {tExtTok,   tRemainder,     2,   1},
-    {tExtTok,   tCheckTmr,      2,   0},
-    {tExtTok,   tStartTmr,      0,   0},
-    {t2ByteTok, tSubStrng,      3,   0},
-    {t2ByteTok, tLength,        1,   0},
-    {t2ByteTok, tRandInt,       2,   0},
-    {tVarOut,   tDefineSprite,  -1,  0},
-    {tVarOut,   tData,          -1,  0},
-    {tVarOut,   tCopy,          -1,  0},
-    {tVarOut,   tAlloc,         1,   0},
-    {tVarOut,   tDefineTilemap, -1,  0},
-    {tVarOut,   tCopyData,      -1,  0},
-    {tVarOut,   tLoadData,      3,   0},
-    {tVarOut,   tSetBrightness, 1,   0}
-};
-
 bool inExpression = false;
 bool inFunction = false;
 bool canUseMask = true;
 bool allowExpression = true;
 uint8_t returnToken = 0;
-extern uint8_t (*functions[256])(uint8_t tok);
+extern uint8_t (*functionPointers[256])(uint8_t tok);
 extern uint24_t outputElements;
 extern uint24_t stackElements;
 
@@ -112,7 +80,7 @@ uint8_t ParseUntilEnd(void) {
     
     // Do things based on the token
     while ((token = _getc()) != EOF) {
-        if ((ret = (*functions[token])(token)) != VALID || !returnToken) {
+        if ((ret = (*functionPointers[token])(token)) != VALID || returnToken) {
             return ret;
         }
     }
@@ -316,7 +284,7 @@ uint8_t ParseVariable(uint8_t tok) {
 }
 
 uint8_t ParseOperator(uint8_t tok) {
-    uint8_t precedence = operatorPrecedence[getIndexOfOperator(tok) - 1];
+    uint8_t precedence = operatorPrecedence[getIndexOfOperator(tok)];
     element_t newElement = {0};
     
     if (tok == tStore) {
@@ -413,8 +381,8 @@ uint8_t ParseFunction(uint8_t tok) {
     newElement.operand.func.mask = TYPE_MASK_U24;
     
     for (a = 0; a < AMOUNT_OF_FUNCTIONS; a++) {
-        if (implementedFunctions[a][0] == tok && implementedFunctions[a][1] == function2) {
-            if (implementedFunctions[a][2]) {
+        if (functions[a][0] == tok && functions[a][1] == function2) {
+            if (functions[a][2]) {
                 newElement.operand.func.amountOfArgs = 1;
                 stackPush(newElement);
             } else {
@@ -476,7 +444,7 @@ uint8_t ParseCloseFunction(uint8_t tok) {
     return VALID;
 }
 
-uint8_t ParseCustomTokens(uint8_t tok) {
+uint8_t ParseCustomToken(uint8_t tok) {
     return VALID;
 }
 
@@ -489,6 +457,8 @@ uint8_t ParseUnimplemented(uint8_t tok) {
 }
 
 uint8_t ParseNewLine(uint8_t tok) {
+    uint8_t res;
+    
     // Expression after function without arguments
     if ((inExpression && !allowExpression) || (inFunction && !inExpression)) {
         return E_SYNTAX;
@@ -498,7 +468,9 @@ uint8_t ParseNewLine(uint8_t tok) {
     
     // Compile the expression
     if (inExpression) {
-        ParseExpression();
+        if ((res = ParseExpression()) != VALID) {
+            return res;
+        }
         
         // Return to function if in function
         if (inFunction) {
@@ -516,9 +488,60 @@ uint8_t ParseNewLine(uint8_t tok) {
 }
 
 uint8_t ParseExpression(void) {
-    int index;
+    uint24_t index;
+    element_t firstElement;
     
     EntireStackToOutput();
+    OptimizeExpression();
+    
+    for (index = 1; index < outputElements; index++) {
+        uint8_t res;
+        element_t outputCurr = getOutputElement(index);
+        
+        if (outputCurr.type == TYPE_OPERATOR) {
+            // Not enough arguments
+            if (index < 2) {
+                return E_SYNTAX;
+            }
+            
+            if ((res = compileOperator(index)) != VALID) {
+                return res;
+            }
+            
+            removeOutputElement(index);
+            removeOutputElement(index - 1);
+            index -= 2;
+        } else if (outputCurr.type == TYPE_FUNCTION) {
+            uint8_t amountOfArgs = outputCurr.operand.func.amountOfArgs;
+            
+            if (index < amountOfArgs) {
+                return E_SYNTAX;
+            }
+        } else if (outputCurr.type == TYPE_FUNCTION_START) {
+        }
+    }
+    
+    if (outputElements != 1) {
+        return E_SYNTAX;
+    }
+    
+    // Parse the last (or only) element
+    /*firstElement = getOutputElement(0);
+    switch (firstElement.type) {
+        case TYPE_NUMBER:
+        case TYPE_VARIABLE:
+        case TYPE_CHAIN_ANS:
+        default:
+            return E_SYNTAX;
+    }*/
+    
+    outputElements = 0;
+    
+    return VALID;
+}
+
+void OptimizeExpression(void) {
+    uint24_t index;
     
     for (index = 1; index < outputElements; index++) {
         element_t outputPrevPrev = getOutputElement(index - 2);
@@ -547,40 +570,28 @@ uint8_t ParseExpression(void) {
             // Enough arguments
             if (amountOfArgs <= index) {
                 for (a = 0; a < AMOUNT_OF_FUNCTIONS; a++) {
-                    if (implementedFunctions[a][0] == function && implementedFunctions[a][1] == outputCurr.operand.func.function2) {
-                        // Right amount of arguments
-                        if (implementedFunctions[a][2] != -1 && implementedFunctions[a][2] != amountOfArgs) {
-                            return E_ARGUMENTS;
-                        }
-                        
-                        // Allowed to parse the function
-                        if (implementedFunctions[a][3]) {
-                            // Both arguments should be a number
-                            if (outputPrev.type == TYPE_NUMBER && (amountOfArgs == 1 || outputPrevPrev.type == TYPE_NUMBER)) {
-                                removeOutputElement(index);
-                                
-                                // Parse and store
-                                if (amountOfArgs == 1) {
-                                    outputPrev.operand.num = execFunc(function, 0, outputPrev.operand.num);
-                                    index--;
-                                } else {
-                                    outputPrevPrev.operand.num = execFunc(function, outputPrevPrev.operand.num, outputPrev.operand.num);
-                                    removeOutputElement(index - 1);
-                                    index -= 2;
-                                }
-                                
-                                continue;
+                    if (functions[a][0] == function && functions[a][1] == outputCurr.operand.func.function2 && functions[a][3]) {
+                        // Both arguments should be a number
+                        if (outputPrev.type == TYPE_NUMBER && (amountOfArgs == 1 || outputPrevPrev.type == TYPE_NUMBER)) {
+                            removeOutputElement(index);
+                            
+                            // Parse and store
+                            if (amountOfArgs == 1) {
+                                outputPrev.operand.num = execFunc(function, 0, outputPrev.operand.num);
+                                index--;
+                            } else {
+                                outputPrevPrev.operand.num = execFunc(function, outputPrevPrev.operand.num, outputPrev.operand.num);
+                                removeOutputElement(index - 1);
+                                index -= 2;
                             }
+                            
+                            continue;
                         }
                     }
                 }
             }
         }
     }
-    
-    // More stuff
-    
-    return VALID;
 }
 
 uint8_t ParseClrHome(uint8_t tok) {
@@ -596,6 +607,8 @@ uint8_t ParseClrHome(uint8_t tok) {
 }
 
 uint8_t ParseI(uint8_t tok) {
+    skipLine();
+    
     return VALID;
 }
 
@@ -657,14 +670,16 @@ uint8_t ParseOutput(uint8_t tok) {
 
 void EntireStackToOutput(void) {
     while (stackElements) {
-        outputStackPush(stackPop());
+        element_t stackElement = stackPop();
+        
+        outputStackPush(stackElement);
     }
 }
 
 void skipLine(void) {
 }
 
-uint8_t (*functions[256])(uint8_t) = {
+uint8_t (*functionPointers[256])(uint8_t) = {
     ParseUnimplemented, // 0x00
     ParseUnimplemented, // 0x01
     ParseUnimplemented, // 0x02
@@ -763,7 +778,7 @@ uint8_t (*functions[256])(uint8_t) = {
     ParsePrgm,          // 0x5F
     ParseUnimplemented, // 0x60
     ParseUnimplemented, // 0x61
-    ParseCustomTokens,  // 0x62
+    ParseCustomToken,   // 0x62
     ParseUnimplemented, // 0x63
     ParseUnimplemented, // 0x64
     ParseUnimplemented, // 0x65
