@@ -677,6 +677,7 @@ void EntireStackToOutput(void) {
 }
 
 void skipLine(void) {
+    while (!CheckEOL());
 }
 
 uint8_t (*functionPointers[256])(uint8_t) = {
