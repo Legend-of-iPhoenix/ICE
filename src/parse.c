@@ -46,11 +46,12 @@ const uint8_t implementedFunctions[AMOUNT_OF_FUNCTIONS][4] = {
 bool inExpression = false;
 bool inFunction = false;
 bool canUseMask = true;
-uint8_t returnToken;
+bool allowExpression = true;
+uint8_t returnToken = 0;
 extern uint24_t outputElements;
 extern uint24_t stackElements;
 
-uint8_t parseProgram(void) {
+uint8_t ParseProgram(void) {
     int token;
     uint8_t ret, currentGoto, currentLbl;
     
@@ -97,6 +98,7 @@ uint8_t parseProgram(void) {
         // Label not found
         displayLabelError(curGoto->name);
         _seek(curGoto->offset, SEEK_SET, ice.inPrgm);
+        
         return W_VALID;
 findNextLabel:;
     }
@@ -110,10 +112,13 @@ uint8_t ParseUntilEnd(void) {
     
     // Do things based on the token
     while ((token = _getc()) != EOF) {
-        if ((ret = (*functions[token])(token)) != VALID) {
+        if ((ret = (*functions[token])(token)) != VALID || !returnToken) {
             return ret;
         }
     }
+    
+    // Parse the last expression
+    ParseNewLine(tEnter);
     
     return VALID;
 }
@@ -128,7 +133,7 @@ uint8_t ParseNumber(uint8_t tok) {
     
     // Fetch number
     input[0] = tok;
-    while (((tok = _getc()) >= t0 && tok <= t9) || tok == tDecPt) {
+    while ((((tok = _getc()) >= t0 && tok <= t9) || tok == tDecPt) && a < 100) {
         if (tok == tDecPt) {
             amountOfPts++;
         }
@@ -144,7 +149,7 @@ uint8_t ParseNumber(uint8_t tok) {
     // Push to the stack
     newElement.needRelocate = newElement.allowStoreTo = false;
     newElement.type = TYPE_NUMBER;
-    newElement.operand.numb = atof(input);
+    newElement.operand.num = atof(input);
     outputStackPush(newElement);
     
     return VALID;
@@ -242,9 +247,11 @@ uint8_t ParseDegree(uint8_t tok) {
 uint8_t ParseOSList(uint8_t tok) {
     element_t newElement;
     
+    newElement.needRelocate = false;
     tok = _getc();
+    
+    // Element of list
     if (_getc() == tLParen) {
-        newElement.needRelocate = false;
         newElement.allowStoreTo = true;
         newElement.type = TYPE_FUNCTION;
         newElement.operand.func.function = tVarLst;
@@ -254,6 +261,7 @@ uint8_t ParseOSList(uint8_t tok) {
         stackPush(newElement);
     } else {
         SeekMinus1();
+        newElement.allowStoreTo = false;
         newElement.type = TYPE_NUMBER;
         newElement.operand.num = prescan.OSLists[tok];
         outputStackPush(newElement);
@@ -377,6 +385,7 @@ uint8_t ParseGetkey(uint8_t tok) {
 uint8_t ParseDetSum(uint8_t tok) {
     element_t newElement;
     
+    newElement.allowStoreTo = false;
     newElement.type = TYPE_FUNCTION_START;
     outputStackPush(newElement);
     
@@ -428,9 +437,14 @@ uint8_t ParseCloseFunction(uint8_t tok) {
     }
     
     if (!stackElements) {
-        returnToken = tok;
-        
-        return E_EXTRA_PAREN;
+        if (inFunction) {
+            ParseExpression();
+            returnToken = tok;
+            
+            return VALID;
+        } else {
+            return E_EXTRA_PAREN;
+        }
     } else {
         uint8_t openingFunction = prevElement.operand.function.function;
         
@@ -467,9 +481,48 @@ uint8_t ParseUnimplemented(uint8_t tok) {
 }
 
 uint8_t ParseNewLine(uint8_t tok) {
+    // Expression after function without arguments
+    if ((inExpression && !allowExpression) || (inFunction && !inExpression)) {
+        return E_SYNTAX;
+    }
+    
+    canUseMask = true;
+    
+    // Compile the expression
+    if (inExpression) {
+        ParseExpression();
+        
+        // Return to function if in function
+        if (inFunction) {
+            returnToken = tEnter;
+            
+            return VALID;
+        }
+    }
+    
+    // Reset some standard variables
+    inExpression = inFunction = false;
+    allowExpression = true;
+    
+    return VALID;
 }
 
-uint8_t ParsePrgm(uint8_t tok) {
+uint8_t ParseExpression(void) {
+    EntireStackToOutput();
+    
+    // More stuff
+}
+
+uint8_t ParseClrHome(uint8_t tok) {
+    if (inExpression || inFunction) {
+        return E_SYNTAX;
+    }
+    
+    allowExpression = false;
+    CALL(_HomeUp);
+    CALL(_ClrLCDFull);
+    
+    return VALID;
 }
 
 void EntireStackToOutput(void) {
@@ -477,6 +530,35 @@ void EntireStackToOutput(void) {
         outputStackPush(stackPop());
     }
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
@@ -1427,7 +1509,6 @@ static uint8_t functionClrHome(int token) {
     if (!CheckEOL()) {
         return E_SYNTAX;
     }
-    MaybeLDIYFlags();
     CALL(_HomeUp);
     CALL(_ClrLCDFull);
     ResetAllRegs();
@@ -2125,7 +2206,7 @@ uint8_t (*functions[256])(uint8_t) = {
     functionDisp,       // 0xDE
     ParseUnimplemented, // 0xDF
     functionOutput,     // 0xE0
-    functionClrHome,    // 0xE1
+    ParseClrHome,       // 0xE1
     ParseUnimplemented, // 0xE2
     ParseUnimplemented, // 0xE3
     ParseUnimplemented, // 0xE4

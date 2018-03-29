@@ -15,7 +15,7 @@
 
 bool comparePtrToTempStrings(uint24_t addr);
 uint8_t getIndexOfOperator(uint8_t _operator);
-uint24_t executeOperator(uint24_t operand1, uint24_t operand2, uint8_t operator);
+uint24_t executeOperator(uint24_t operand1, uint24_t operand2, uint8_t op);
 void LD_HL_STRING(uint24_t stringPtr, uint8_t type);
 uint8_t parseOperator(element_t *outputPrevPrevPrev, element_t *outputPrevPrev, element_t *outputPrev, element_t *outputCurr, bool canOptimizeStrings);
 

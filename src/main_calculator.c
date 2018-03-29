@@ -177,7 +177,7 @@ void main(void) {
     displayMessageLineScroll(buf);
     
     // Parse the program, create or empty the output program if parsing succeeded
-    if ((res = parseProgram()) == VALID) {
+    if ((res = ParseProgram()) == VALID) {
         uint24_t previousSize = 0;
 
         // Get the sizes of both stacks
