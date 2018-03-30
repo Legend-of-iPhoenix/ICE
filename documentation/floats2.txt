@@ -1,0 +1,88 @@
+Unless otherwise specified, input is always A, BC
+
+int -> float: 
+  Routine: __ultof
+  Input:   BC
+  Output:  A, BC
+  
+float -> int:
+  Routine: __ftol
+  Input:   A, BC
+  Output:  BC
+  
+float + float:
+  Routine: __fadd
+  Output:  A, BC
+  
+float - float:
+  Routine: __fsub
+  Output:  A, BC
+  
+float * float:
+  Routine: __fmul
+  Output:  A, BC
+  
+float / float:
+  Routine: __fdiv
+  Output:  A, BC
+  
+float > float:
+  Routine: __fcmp
+  Output:  P flag
+  
+float < float (reversed):
+  Routine: __fcmp
+  Output:  P flag
+  
+float >= float:
+  Routine: __fcmp
+  Output:  M flag
+  
+float <= float (reversed):
+  Routine: __fcmp
+  Output:  M flag
+  
+float == float:
+  Routine: __fcmp
+  Output:  Z flag
+  
+float != float (reversed):
+  Routine: __fcmp
+  Output:  NZ flag
+  
+bitwise floats:
+  Error (impossible)
+  
+float or float:
+  Routine:
+    res 7, a \ res 7, e \ Any of A, BC, E, HL nonzero
+  Output:  flags
+  
+float and float:
+
+float xor float:
+
+sqrt(float):
+  Routine: __sqrt (02213Ch)
+  Input:   push af \ push bc
+  Output:  E, HL
+  
+int(float):
+  Routine: __ceil (0220F4h)
+  Input:   push af \ push bc
+  Output:  E, HL
+  
+sin(float):
+  Routine: __sin (022118h)
+  Input:   push af \ push bc
+  Output:  E, HL
+  
+cos(float):
+  Routine: __sin (02211Ch)
+  Input:   push af \ push bc
+  Output:  E, HL
+  
+round(float):
+  Routine: __round (https://github.com/CE-Programming/toolchain/blob/master/src/std/shared/round.src)
+  Input:   push af \ push bc
+  Output:  E, HL

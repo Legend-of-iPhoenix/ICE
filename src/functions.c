@@ -129,40 +129,10 @@ const uint8_t FileiocArgs[] = {
     RET_HL   | 3, SMALL_3,     // DetectVar
 };
 
-const uint8_t functions[][4] = {
-// function / second byte / amount of arguments / disallow arguments as numbers
-    {tLBrace,   0,              1,   0},
-    {tVarLst,   0,              1,   0},
-    {tGetKey,   0,              -1,  0},
-/* Never change the first 3 elements of this function array, these indexes are hardcoded and important! */
-    {tNot,      0,              1,   1},
-    {tMin,      0,              2,   1},
-    {tMax,      0,              2,   1},
-    {tMean,     0,              2,   1},
-    {tSqrt,     0,              1,   1},
-    {tDet,      0,              -1,  0},
-    {tSum,      0,              -1,  0},
-    {tSin,      0,              1,   1},
-    {tCos,      0,              1,   1},
-    {tRand,     0,              0,   0},
-    {tAns,      0,              0,   0},
-    {tLParen,   0,              1,   0},
-    {tLBrack,   0,              1,   0},
-    {tExtTok,   tRemainder,     2,   1},
-    {tExtTok,   tCheckTmr,      2,   0},
-    {tExtTok,   tStartTmr,      0,   0},
-    {t2ByteTok, tSubStrng,      3,   0},
-    {t2ByteTok, tLength,        1,   0},
-    {t2ByteTok, tRandInt,       2,   0},
-    {tVarOut,   tDefineSprite,  -1,  0},
-    {tVarOut,   tData,          -1,  0},
-    {tVarOut,   tCopy,          -1,  0},
-    {tVarOut,   tAlloc,         1,   0},
-    {tVarOut,   tDefineTilemap, -1,  0},
-    {tVarOut,   tCopyData,      -1,  0},
-    {tVarOut,   tLoadData,      3,   0},
-    {tVarOut,   tSetBrightness, 1,   0}
-};
+uint8_t amountOfArgs;
+element_t outputCurr;
+element_t outputPrev;
+element_t outputPrevPrev;
 
 float execFunc(uint8_t func, float operand1, float operand2) {
     switch (func) {
@@ -188,5 +158,153 @@ float execFunc(uint8_t func, float operand1, float operand2) {
 }
 
 uint8_t compileFunction(uint24_t index) {
+    outputCurr     = getOutputElement(index);
+    outputPrev     = getOutputElement(index - 1);
+    outputPrevPrev = getOutputElement(index - 2);
+    amountOfArgs   = outputCurr.operand.func.amountOfArgs;
+    
+    return (*functions[index].functionPtr)(functions[index].function);
+}
+
+uint8_t FunctionBrace(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionOSList(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionGetKey(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionNot(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionMinMax(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionMean(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionSqrt(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionDetSum(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionSinCos(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionRand(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionAns(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionParen(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionBrack(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionRemainder(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionCheckTmr(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionStartTmr(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionSubString(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionLength(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionRandInt(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionDefineSprite(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionData(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionCopy(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionAlloc(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionDefineTilemap(uint8_t tok) {
     return VALID;
 }
+
+uint8_t FunctionCopyData(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionLoadData(uint8_t tok) {
+	return VALID;
+}
+
+uint8_t FunctionSetBrightness(uint8_t tok) {
+	return VALID;
+}
+
+const function_t functions[AMOUNT_OF_FUNCTIONS] = {
+// function / second byte / amount of arguments / disallow arguments as numbers / function
+    {tLBrace,   0,              1,   0, FunctionBrace},
+    {tVarLst,   0,              1,   0, FunctionOSList},
+    {tGetKey,   0,              -1,  0, FunctionGetKey},
+/* Never change the first 3 elements of this function array, these indexes are hardcoded and important! */
+    {tNot,      0,              1,   1, FunctionNot},
+    {tMin,      0,              2,   1, FunctionMinMax},
+    {tMax,      0,              2,   1, FunctionMinMax},
+    {tMean,     0,              2,   1, FunctionMean},
+    {tSqrt,     0,              1,   1, FunctionSqrt},
+    {tDet,      0,              -1,  0, FunctionDetSum},
+    {tSum,      0,              -1,  0, FunctionDetSum},
+    {tSin,      0,              1,   1, FunctionSinCos},
+    {tCos,      0,              1,   1, FunctionSinCos},
+    {tRand,     0,              0,   0, FunctionRand},
+    {tAns,      0,              0,   0, FunctionAns},
+    {tLParen,   0,              1,   0, FunctionParen},
+    {tLBrack,   0,              1,   0, FunctionBrack},
+    {tExtTok,   tRemainder,     2,   1, FunctionRemainder},
+    {tExtTok,   tCheckTmr,      2,   0, FunctionCheckTmr},
+    {tExtTok,   tStartTmr,      0,   0, FunctionStartTmr},
+    {t2ByteTok, tSubStrng,      3,   0, FunctionSubString},
+    {t2ByteTok, tLength,        1,   0, FunctionLength},
+    {t2ByteTok, tRandInt,       2,   0, FunctionRandInt},
+    {tVarOut,   tDefineSprite,  -1,  0, FunctionDefineSprite},
+    {tVarOut,   tData,          -1,  0, FunctionData},
+    {tVarOut,   tCopy,          -1,  0, FunctionCopy},
+    {tVarOut,   tAlloc,         1,   0, FunctionAlloc},
+    {tVarOut,   tDefineTilemap, -1,  0, FunctionDefineTilemap},
+    {tVarOut,   tCopyData,      -1,  0, FunctionCopyData},
+    {tVarOut,   tLoadData,      3,   0, FunctionLoadData},
+    {tVarOut,   tSetBrightness, 1,   0, FunctionSetBrightness}
+};

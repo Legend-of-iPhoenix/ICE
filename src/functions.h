@@ -24,7 +24,15 @@
 
 #define AMOUNT_OF_FUNCTIONS 30
 
-extern const uint8_t functions[][4];
+typedef struct {
+    uint8_t function;
+    uint8_t function2;
+    uint8_t amountOfArgs;
+    uint8_t disallowNumArgs;
+    uint8_t (*functionPtr)(uint8_t);
+} function_t;
+
+extern const function_t functions[AMOUNT_OF_FUNCTIONS];
 
 float execFunc(uint8_t func, float operand1, float operand2);
 uint8_t compileFunction(uint24_t index);

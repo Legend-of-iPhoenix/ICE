@@ -15,7 +15,7 @@ bool inFunction = false;
 bool canUseMask = true;
 bool allowExpression = true;
 uint8_t returnToken = 0;
-extern uint8_t (*functionPointers[256])(uint8_t tok);
+extern uint8_t (*tokenPointers[256])(uint8_t tok);
 extern uint24_t outputElements;
 extern uint24_t stackElements;
 
@@ -80,7 +80,7 @@ uint8_t ParseUntilEnd(void) {
     
     // Do things based on the token
     while ((token = _getc()) != EOF) {
-        if ((ret = (*functionPointers[token])(token)) != VALID || returnToken) {
+        if ((ret = (*tokenPointers[token])(token)) != VALID || returnToken) {
             return ret;
         }
     }
@@ -326,6 +326,7 @@ uint8_t ParseGetkey(uint8_t tok) {
     inExpression = true;
     canUseMask = false;
     
+    // Push to the stack
     newElement.type = TYPE_FUNCTION;
     newElement.operand.func.index = 2;
     newElement.operand.func.mask = TYPE_MASK_U24;
@@ -337,6 +338,22 @@ uint8_t ParseGetkey(uint8_t tok) {
         newElement.operand.func.amountOfArgs = 0;
         outputStackPush(newElement);
     }
+    
+    return VALID;
+}
+
+uint8_t ParseBrace(uint8_t tok) {
+    element_t newElement = {0};
+    
+    inExpression = canUseMask = true;
+    
+    // Push to the stack
+    newElement.allowStoreTo = true;
+    newElement.type = TYPE_FUNCTION;
+    newElement.operand.func.index = 0;
+    newElement.operand.func.mask = TYPE_MASK_U24;
+    newElement.operand.func.amountOfArgs = 1;
+    stackPush(newElement);
     
     return VALID;
 }
@@ -364,9 +381,9 @@ uint8_t ParseFunction(uint8_t tok) {
     newElement.operand.func.mask = TYPE_MASK_U24;
     
     for (a = 0; a < AMOUNT_OF_FUNCTIONS; a++) {
-        if (functions[a][0] == tok && functions[a][1] == function2) {
+        if (functions[a].function == tok && functions[a].function2 == function2) {
             newElement.operand.func.index = a;
-            if (functions[a][2]) {
+            if (functions[a].amountOfArgs) {
                 newElement.operand.func.amountOfArgs = 1;
                 stackPush(newElement);
             } else {
@@ -402,7 +419,7 @@ uint8_t ParseCloseFunction(uint8_t tok) {
             return E_EXTRA_PAREN;
         }
     } else {
-        uint8_t openingFunction = functions[prevElement.operand.func.index][0];
+        uint8_t openingFunction = functions[prevElement.operand.func.index].function;
         
         if ((tok == tRBrace && openingFunction != tLBrace) || 
             (tok == tRBrack && openingFunction != tLBrack) || 
@@ -496,10 +513,11 @@ uint8_t ParseExpression(void) {
             removeOutputElement(index - 1);
             index -= 2;
         } else if (outputCurr.type == TYPE_FUNCTION) {
+            uint8_t functionIndex = outputCurr.operand.func.index;
             uint8_t amountOfArgs = outputCurr.operand.func.amountOfArgs;
             
-            if (index < amountOfArgs) {
-                return E_SYNTAX;
+            if (index < amountOfArgs || (functions[functionIndex].amountOfArgs != -1 && functions[functionIndex].amountOfArgs != amountOfArgs)) {
+                return E_ARGUMENTS;
             }
         } else if (outputCurr.type == TYPE_FUNCTION_START) {
         }
@@ -550,10 +568,10 @@ void OptimizeExpression(void) {
         if (outputCurr.type == TYPE_FUNCTION) {
             uint8_t functionIndex = outputCurr.operand.func.index;
             uint8_t amountOfArgs = outputCurr.operand.func.amountOfArgs, a;
-            uint8_t function = functions[functionIndex][0];
+            uint8_t function = functions[functionIndex].function;
             
             // Enough arguments and allow to change
-            if (amountOfArgs <= index && functions[functionIndex][3]) {
+            if (amountOfArgs <= index && functions[functionIndex].disallowNumArgs) {
                 // Both arguments should be a number
                 if (outputPrev.type == TYPE_NUMBER && (amountOfArgs == 1 || outputPrevPrev.type == TYPE_NUMBER)) {
                     removeOutputElement(index);
@@ -661,7 +679,7 @@ void skipLine(void) {
     while (!CheckEOL());
 }
 
-uint8_t (*functionPointers[256])(uint8_t) = {
+uint8_t (*tokenPointers[256])(uint8_t) = {
     ParseUnimplemented, // 0x00
     ParseUnimplemented, // 0x01
     ParseUnimplemented, // 0x02
@@ -670,7 +688,7 @@ uint8_t (*functionPointers[256])(uint8_t) = {
     ParseUnimplemented, // 0x05
     ParseFunction,      // 0x06
     ParseCloseFunction, // 0x07
-    ParseFunction,      // 0x08
+    ParseBrace,         // 0x08
     ParseCloseFunction, // 0x09
     ParseUnimplemented, // 0x0A
     ParseDegree,        // 0x0B
