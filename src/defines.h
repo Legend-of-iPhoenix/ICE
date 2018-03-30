@@ -6,6 +6,7 @@
 
 typedef float num_t;
 typedef uint8_t vari_t;
+typedef uint8_t type_t;
  
 typedef struct op {
     uint8_t type;
@@ -28,6 +29,7 @@ typedef struct {
         op_t op;
         vari_t var;
         num_t num;
+        type_t ansType;
     } operand;
 } element_t;
 

@@ -10,10 +10,14 @@
 #include "routines.h"
 #include "prescan.h"
 
+static uint8_t op;
 const char operators[18]              = {tStore, tDotIcon, tCrossIcon, tBoxIcon, tAnd, tXor, tOr, tEQ, tLT, tGT, tLE, tGE, tNE, tMul, tDiv, tAdd, tSub, 0};
 const uint8_t operatorPrecedence[17]  = {0, 6, 8, 8, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
 const uint8_t operatorPrecedence2[17] = {9, 6, 8, 8, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
 const uint8_t operatorCanSwap[17]     = {0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0}; // Used for operators which can swap the operands, i.e. A*B = B*A
+static element_t outputCurr;
+static element_t outputPrev;
+static element_t outputPrevPrev;
 
 #ifndef CALCULATOR
 static uint8_t clz(uint24_t x) {
@@ -119,5 +123,99 @@ float execOp(uint8_t op, float operand1, float operand2) {
 }
 
 uint8_t compileOperator(uint24_t index) {
-    return VALID;
+    outputCurr     = getOutputElement(index);
+    outputPrev     = getOutputElement(index - 1);
+    outputPrevPrev = getOutputElement(index - 2);
+    op = outputCurr.operand.op.type;
+    
+    return (*operatorsPointers[getIndexOfOperator(op)])();
 }
+
+uint8_t OperatorStore(void) {
+	return VALID;
+}
+
+uint8_t OperatorBitAnd(void) {
+	return VALID;
+}
+
+uint8_t OperatorBitOr(void) {
+	return VALID;
+}
+
+uint8_t OperatorBitXor(void) {
+	return VALID;
+}
+
+uint8_t OperatorAnd(void) {
+	return VALID;
+}
+
+uint8_t OperatorXOr(void) {
+	return VALID;
+}
+
+uint8_t OperatorOr(void) {
+	return VALID;
+}
+
+uint8_t OperatorEQ(void) {
+	return VALID;
+}
+
+uint8_t OperatorLT(void) {
+	return VALID;
+}
+
+uint8_t OperatorGT(void) {
+	return VALID;
+}
+
+uint8_t OperatorLE(void) {
+	return VALID;
+}
+
+uint8_t OperatorGE(void) {
+	return VALID;
+}
+
+uint8_t OperatorNE(void) {
+	return VALID;
+}
+
+uint8_t OperatorMul(void) {
+	return VALID;
+}
+
+uint8_t OperatorDiv(void) {
+	return VALID;
+}
+
+uint8_t OperatorAdd(void) {
+	return VALID;
+}
+
+uint8_t OperatorSub(void) {
+	return VALID;
+}
+
+
+uint8_t (*operatorsPointers[17])(void) = {
+    OperatorStore,
+    OperatorBitAnd,
+    OperatorBitOr,
+    OperatorBitXor,
+    OperatorAnd,
+    OperatorXOr,
+    OperatorOr,
+    OperatorEQ,
+    OperatorLT,
+    OperatorGT,
+    OperatorLE,
+    OperatorGE,
+    OperatorNE,
+    OperatorMul,
+    OperatorDiv,
+    OperatorAdd,
+    OperatorSub
+};

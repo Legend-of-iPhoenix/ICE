@@ -10,7 +10,7 @@
 #include "routines.h"
 #include "prescan.h"
 
-const uint8_t GraphxArgs[] = {
+static const uint8_t GraphxArgs[] = {
     RET_NONE | 0, ARG_NORM,    // Begin
     RET_NONE | 0, ARG_NORM,    // End
     RET_A    | 1, SMALL_1,     // SetColor
@@ -105,7 +105,7 @@ const uint8_t GraphxArgs[] = {
     RET_HL   | 5, SMALL_345,   // RotatedScaledSprite_NoClip
 };
 
-const uint8_t FileiocArgs[] = {
+static const uint8_t FileiocArgs[] = {
     RET_NONE | 0, ARG_NORM,    // CloseAll
     RET_A    | 2, ARG_NORM,    // Open
     RET_A    | 3, SMALL_3,     // OpenVar
@@ -129,10 +129,10 @@ const uint8_t FileiocArgs[] = {
     RET_HL   | 3, SMALL_3,     // DetectVar
 };
 
-uint8_t amountOfArgs;
-element_t outputCurr;
-element_t outputPrev;
-element_t outputPrevPrev;
+static uint8_t amountOfArgs;
+static element_t outputCurr;
+static element_t outputPrev;
+static element_t outputPrevPrev;
 
 float execFunc(uint8_t func, float operand1, float operand2) {
     switch (func) {

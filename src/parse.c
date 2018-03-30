@@ -10,11 +10,11 @@
 #include "routines.h"
 #include "prescan.h"
 
-bool inExpression = false;
-bool inFunction = false;
-bool canUseMask = true;
-bool allowExpression = true;
-uint8_t returnToken = 0;
+static bool inExpression = false;
+static bool inFunction = false;
+static bool canUseMask = true;
+static bool allowExpression = true;
+static uint8_t returnToken = 0;
 extern uint8_t (*tokenPointers[256])(uint8_t tok);
 extern uint24_t outputElements;
 extern uint24_t stackElements;
