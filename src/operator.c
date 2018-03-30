@@ -199,7 +199,6 @@ uint8_t OperatorSub(void) {
 	return VALID;
 }
 
-
 uint8_t (*operatorsPointers[17])(void) = {
     OperatorStore,
     OperatorBitAnd,

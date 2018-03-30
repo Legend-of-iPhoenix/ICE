@@ -1,6 +1,6 @@
 #include "hooks/ti84pce.inc"
 
-#define AMOUNT_OF_CUSTOM_TOKENS 12
+#define AMOUNT_OF_CUSTOM_TOKENS 13
 #define AMOUNT_OF_GRAPHX_FUNCTIONS 93
 #define AMOUNT_OF_FILEIOC_FUNCTIONS 24
 
@@ -524,12 +524,13 @@ C9:	.db "SetBrightness(LEVEL)", 0
 C10:	.db "SetByte(VAR1[,VAR2...])", 0
 C11:	.db "SetInt(VAR1[,VAR2...])", 0
 C12:	.db "SetFloat(VAR1[,VAR2...])", 0
+C13:    .db "Compare(PTR1,PTR2,SIZE)", 0
 
 F01:	.db "CloseAll()", 0
 F02:	.db "Open(NAME,MODE)", 0
 F03:	.db "OpenVar(NAME,MODE,TYPE)", 0
-F04:	.db "Close(SLOT)", 0
 Tab2:
+F04:	.db "Close(SLOT)", 0
 F05:	.db "Write(DATA,SIZE,COUNT,SLOT)", 0
 F06:	.db "Read(PTR,SIZE,COUNT,SLOT)", 0
 F07:	.db "GetChar(SLOT)", 0
@@ -545,8 +546,8 @@ F16:	.db "Rewind(SLOT)", 0
 F17:	.db "GetSize(SLOT)", 0
 F18:	.db "GetTokenString(", 014h, "PTR,", 014h, "L_TOK,", 014h, "L_STRING)", 0
 F19:	.db "GetDataPtr(SLOT)", 0
-F20:	.db "Detect(", 014h, "PTR,DATA)", 0
 Tab3:
+F20:	.db "Detect(", 014h, "PTR,DATA)", 0
 F21:	.db "DetectVar(", 014h, "PTR,DATA,TYPE)", 0
 F22:	.db "SetVar(TYPE,NAME,DATA)", 0
 F23:	.db "StoVar(TYPE_O,PTR_O,TYPE_I,PTR_I)", 0
@@ -563,8 +564,8 @@ G08:	.db "GetPixel(X,Y)", 0
 G09:	.db "GetDraw()", 0
 G10:	.db "SetDraw(LOC)", 0
 G11:	.db "SwapDraw()", 0
-G12:	.db "Blit(LOC)", 0
 Tab4:
+G12:	.db "Blit(LOC)", 0
 G13:	.db "BlitLines(LOC,Y,NUM)", 0
 G14:	.db "BlitArea(LOC,X,Y,W,H)", 0
 G15:	.db "PrintChar(CHAR)", 0
@@ -580,8 +581,8 @@ G24:	.db "SetCustomFontData(DATA)", 0
 G25:	.db "SetCustomFontSpacing(DATA)", 0
 G26:	.db "SetMonospaceFont(SPACE)", 0
 G27:	.db "GetStringWidth(STRING)", 0
-G28:	.db "GetCharWidth(CHAR)", 0
 Tab5:
+G28:	.db "GetCharWidth(CHAR)", 0
 G29:	.db "GetTextX()", 0
 G30:	.db "GetTextY()", 0
 G31:	.db "Line(X1,Y1,X2,Y2)", 0
@@ -597,8 +598,8 @@ G40:	.db "VertLine_NoClip(X,Y,LENGTH)", 0
 G41:	.db "FillCircle_NoClip(X,Y,R)", 0
 G42:	.db "Rectangle_NoClip(X,Y,W,H)", 0
 G43:	.db "FillRectangle_NoClip(X,Y,W,H)", 0
-G44:	.db "SetClipRegion(XMIN,YMIN,XMAX,YMAX)", 0
 Tab6:
+G44:	.db "SetClipRegion(XMIN,YMIN,XMAX,YMAX)", 0
 G45:	.db "GetClipRegion(PTR)", 0
 G46:	.db "ShiftDown(PIXELS)", 0
 G47:	.db "ShiftUp(PIXELS)", 0
@@ -614,8 +615,8 @@ G56:	.db "NOT USED", 0
 G57:	.db "NOT USED", 0
 G58:	.db "Sprite(PTR,X,Y)", 0
 G59:	.db "TransparentSprite(PTR,X,Y)", 0
-G60:	.db "Sprite_NoClip(PTR,X,Y)", 0
 Tab7:
+G60:	.db "Sprite_NoClip(PTR,X,Y)", 0
 G61:	.db "TransparentSprite_NoClip(PTR,X,Y)", 0
 G62:	.db "GetSprite_NoClip(PTR,X,Y)", 0
 G63:	.db "ScaledSprite_NoClip(PTR,X,Y)", 0
@@ -631,8 +632,8 @@ G72:	.db "FillTriangle(X1,Y1,X2,Y2,X3,Y3)", 0
 G73:	.db "FillTriangle_NoClip(X1,Y1,X2,Y2,X3,Y3)", 0
 G74:	.db "NOT USED", 0
 G75:	.db "SetTextScale(W_SCALE,H_SCALE)", 0
-G76:	.db "SetTransparentColor(COLOR)", 0
 Tab8:
+G76:	.db "SetTransparentColor(COLOR)", 0
 G77:	.db "ZeroScreen()", 0
 G78:	.db "SetTextConfig(CONFIG)", 0
 G79:	.db "GetSpriteChar(CHAR)", 0
@@ -648,8 +649,8 @@ G88:	.db "ConvertToRLETSprite(PTR_IN,PTR_OUT)", 0
 G89:	.db "ConvertToNewRLETSprite()", 0
 G90:	.db "Rot.Sc.Spr.(PTR_IN,PTR_OUT,ANGLE,SCALE)", 0
 G91:	.db "Rot.Sc.Tr.Spr._NC(PTR,X,Y,ANGLE,SCALE)", 0
-G92:	.db "Rot.Sc.Spr._NC(PTR,X,Y,ANGLE,SCALE)", 0
 Tab9:
+G92:	.db "Rot.Sc.Spr._NC(PTR,X,Y,ANGLE,SCALE)", 0
 G93:	.db "SetCharData(INDEX,DATA)", 0
 	.db 0
       
@@ -666,6 +667,7 @@ Tok9:	.db 0BAh, 14, "SetBrightness("	; 62 12
 Tok10:	.db 0C0h, 8,  "SetByte("	; 62 13
 Tok11:	.db 0BFh, 7,  "SetInt("		; 62 14
 Tok12:	.db 0C1h, 9,  "SetFloat("	; 62 15
+Tok13:	.db 0B7h, 8,  "Compare("        ; 62 16
 
 TabPointers:
 	.dl Tab1, Tab2, Tab3, Tab4, Tab5, Tab6, Tab7, Tab8
@@ -692,7 +694,7 @@ GraphxFunctionsPointers:
     
 CustomTokensPointers:
 	.dl Tok1, Tok2, Tok3, Tok4, Tok5, Tok6, Tok7, Tok8
-	.dl Tok9, Tok10, Tok11, Tok12
+	.dl Tok9, Tok10, Tok11, Tok12, Tok13
 
 ProgramText:
 	.db "PROGRAM:", 0

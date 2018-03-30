@@ -19,17 +19,23 @@
 #define SIZEOF_TIMER_DATA  15
 #define SIZEOF_CHEADER     116
 
-#define tDefineSprite      0x0A
-#define tCall              0x0B
-#define tData              0x0C
-#define tCopy              0x0D
-#define tAlloc             0x0E
-#define tDefineTilemap     0x0F
-#define tCopyData          0x10
-#define tLoadData          0x11
-#define tSetBrightness     0x12
-
 #define IX_VARIABLES       0xD13F47
+
+enum {
+    tDefineSprite = 0x0A,
+    tCall,
+    tData,
+    tCopy,
+    tAlloc,
+    tDefineTilemap,
+    tCopyData,
+    tLoadData,
+    tSetBrightness,
+    tSetByte,
+    tSetInt,
+    tSetFloat,
+    tCompare
+};
 
 typedef struct {
     char     name[20];
