@@ -10,7 +10,7 @@
 #include "routines.h"
 #include "errors.h"
 
-extern const uint8_t functions[AMOUNT_OF_FUNCTIONS][4];
+extern const function_t functions[AMOUNT_OF_FUNCTIONS];
 prescan_t prescan;
 const uint8_t colorTable[16] = {255,24,224,0,248,36,227,97,9,19,230,255,181,107,106,74};    // Thanks Cesium :D
 
@@ -163,7 +163,7 @@ void preScanProgram(void) {
                     uint8_t a;
                     
                     for (a = 0; a < AMOUNT_OF_FUNCTIONS; a++) {
-                        if (tok == functions[a][0] && tok2 == functions[a][1] && functions[a][2] && inInt) {
+                        if (tok == functions[a].function && tok2 == functions[a].function2 && functions[a].amountOfArgs && inInt) {
                             intDepth++;
                         }
                     }

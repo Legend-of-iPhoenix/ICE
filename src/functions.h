@@ -22,7 +22,7 @@
 #define SMALL_34      (SMALL_3 | SMALL_4)
 #define SMALL_345     (SMALL_3 | SMALL_45)
 
-#define AMOUNT_OF_FUNCTIONS 30
+#define AMOUNT_OF_FUNCTIONS 33
 
 typedef struct {
     uint8_t function;

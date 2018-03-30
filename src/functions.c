@@ -150,6 +150,12 @@ float execFunc(uint8_t func, float operand1, float operand2) {
             return 255 * sin(operand2 * (2 * M_PI / 256));
         case tCos:
             return 255 * cos(operand2 * (2 * M_PI / 256));
+        case tInt:
+            return floor(operand2);
+        case tAbs:
+            return abs(operand2);
+        case tRound:
+            return round(operand2);
         case tExtTok:
             return (float)((uint24_t)operand1 % (uint24_t)operand2);
         default:
@@ -216,6 +222,18 @@ uint8_t FunctionParen(uint8_t tok) {
 
 uint8_t FunctionBrack(uint8_t tok) {
 	return VALID;
+}
+
+uint8_t FunctionInt(uint8_t tok) {
+    return VALID;
+}
+
+uint8_t FunctionAbs(uint8_t tok) {
+    return VALID;
+}
+
+uint8_t FunctionRound(uint8_t tok) {
+    return VALID;
 }
 
 uint8_t FunctionRemainder(uint8_t tok) {
@@ -293,6 +311,9 @@ const function_t functions[AMOUNT_OF_FUNCTIONS] = {
     {tAns,      0,              0,   0, FunctionAns},
     {tLParen,   0,              1,   0, FunctionParen},
     {tLBrack,   0,              1,   0, FunctionBrack},
+    {tInt,      0,              1,   1, FunctionInt},
+    {tAbs,      0,              1,   1, FunctionAbs},
+    {tRound,    0,              1,   1, FunctionRound},
     {tExtTok,   tRemainder,     2,   1, FunctionRemainder},
     {tExtTok,   tCheckTmr,      2,   0, FunctionCheckTmr},
     {tExtTok,   tStartTmr,      0,   0, FunctionStartTmr},

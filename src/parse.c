@@ -698,7 +698,7 @@ uint8_t (*tokenPointers[256])(uint8_t) = {
     ParseUnimplemented, // 0x0F
     ParseFunction,      // 0x10
     ParseCloseFunction, // 0x11
-    ParseUnimplemented, // 0x12
+    ParseFunction,      // 0x12
     ParseUnimplemented, // 0x13
     ParseUnimplemented, // 0x14
     ParseUnimplemented, // 0x15
@@ -857,8 +857,8 @@ uint8_t (*tokenPointers[256])(uint8_t) = {
     ParseUnimplemented, // 0xAE
     ParseUnimplemented, // 0xAF
     ParseChs,           // 0xB0
-    ParseUnimplemented, // 0xB1
-    ParseUnimplemented, // 0xB2
+    ParseFunction,      // 0xB1
+    ParseFunction,      // 0xB2
     ParseDetSum,        // 0xB3
     ParseUnimplemented, // 0xB4
     ParseUnimplemented, // 0xB5
