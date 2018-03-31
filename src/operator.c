@@ -127,14 +127,17 @@ float execOp(uint8_t op, float operand1, float operand2) {
 }
 
 uint8_t compileOperator(uint24_t index) {
+    uint8_t operatorIndex;
+    
     outputCurr     = getOutputElement(index);
     outputPrev     = getOutputElement(index - 1);
     outputPrevPrev = getOutputElement(index - 2);
-    op = outputCurr.operand.op.type;
-    type1 = outputPrevPrev.type;
-    type2 = outputPrev.type;
-    isFloat1 = (type1 == TYPE_FLOAT || (type1 == TYPE_VARIABLE && prescan.variables[outputPrevPrev.operand.var].type == TYPE_FLOAT));
-    isFloat2 = (type2 == TYPE_FLOAT || (type2 == TYPE_VARIABLE && prescan.variables[outputPrev.operand.var].type == TYPE_FLOAT));
+    op             = outputCurr.operand.op.type;
+    type1          = outputPrevPrev.type;
+    type2          = outputPrev.type;
+    isFloat1       = (type1 == TYPE_FLOAT || (type1 == TYPE_VARIABLE && prescan.variables[outputPrevPrev.operand.var].type == TYPE_FLOAT));
+    isFloat2       = (type2 == TYPE_FLOAT || (type2 == TYPE_VARIABLE && prescan.variables[outputPrev.operand.var].type == TYPE_FLOAT));
+    operatorIndex  = getIndexOfOperator(op);
     
     if (type1 == TYPE_CHAIN_PUSH || type2 == TYPE_CHAIN_PUSH) {
         if (type2 != TYPE_CHAIN_ANS) {
@@ -151,10 +154,24 @@ uint8_t compileOperator(uint24_t index) {
             return E_SYNTAX;
         }
         
-        (*operatorsPointers[getIndexOfOperator(op)])();
+        if (operatorCanSwap[operatorIndex] && (type1 <= TYPE_FLOAT || type2 == TYPE_CHAIN_ANS)) {
+            OperatorsSwap();
+        }
+        
+        (*operatorsPointers[operatorIndex * 17 + (type1 - 1) * 4 + type2])();
     }
     
     return VALID;
+}
+
+void OperatorsSwap(void) {
+    uint8_t temp = isFloat1;
+    isFloat1 = isFloat2;
+    isFloat2 = temp;
+    
+    temp = type1;
+    type1 = type2;
+    type2 = type1;
 }
 
 void OperatorError(void) {
@@ -193,18 +210,6 @@ void OperatorStoreChainAnsFloat(void) {
 void OperatorStoreChainAnsVariable(void) {
 }
 
-void OperatorBitAndIntVariable(void) {
-}
-
-void OperatorBitAndIntChainAns(void) {
-}
-
-void OperatorBitAndFloatVariable(void) {
-}
-
-void OperatorBitAndFloatChainAns(void) {
-}
-
 void OperatorBitAndVariableInt(void) {
 }
 
@@ -212,9 +217,6 @@ void OperatorBitAndVariableFloat(void) {
 }
 
 void OperatorBitAndVariableVariable(void) {
-}
-
-void OperatorBitAndVariableChainAns(void) {
 }
 
 void OperatorBitAndChainAnsInt(void) {
@@ -226,18 +228,6 @@ void OperatorBitAndChainAnsFloat(void) {
 void OperatorBitAndChainAnsVariable(void) {
 }
 
-void OperatorBitOrIntVariable(void) {
-}
-
-void OperatorBitOrIntChainAns(void) {
-}
-
-void OperatorBitOrFloatVariable(void) {
-}
-
-void OperatorBitOrFloatChainAns(void) {
-}
-
 void OperatorBitOrVariableInt(void) {
 }
 
@@ -245,9 +235,6 @@ void OperatorBitOrVariableFloat(void) {
 }
 
 void OperatorBitOrVariableVariable(void) {
-}
-
-void OperatorBitOrVariableChainAns(void) {
 }
 
 void OperatorBitOrChainAnsInt(void) {
@@ -259,18 +246,6 @@ void OperatorBitOrChainAnsFloat(void) {
 void OperatorBitOrChainAnsVariable(void) {
 }
 
-void OperatorBitXorIntVariable(void) {
-}
-
-void OperatorBitXorIntChainAns(void) {
-}
-
-void OperatorBitXorFloatVariable(void) {
-}
-
-void OperatorBitXorFloatChainAns(void) {
-}
-
 void OperatorBitXorVariableInt(void) {
 }
 
@@ -278,9 +253,6 @@ void OperatorBitXorVariableFloat(void) {
 }
 
 void OperatorBitXorVariableVariable(void) {
-}
-
-void OperatorBitXorVariableChainAns(void) {
 }
 
 void OperatorBitXorChainAnsInt(void) {
@@ -292,18 +264,6 @@ void OperatorBitXorChainAnsFloat(void) {
 void OperatorBitXorChainAnsVariable(void) {
 }
 
-void OperatorAndIntVariable(void) {
-}
-
-void OperatorAndIntChainAns(void) {
-}
-
-void OperatorAndFloatVariable(void) {
-}
-
-void OperatorAndFloatChainAns(void) {
-}
-
 void OperatorAndVariableInt(void) {
 }
 
@@ -311,9 +271,6 @@ void OperatorAndVariableFloat(void) {
 }
 
 void OperatorAndVariableVariable(void) {
-}
-
-void OperatorAndVariableChainAns(void) {
 }
 
 void OperatorAndChainAnsInt(void) {
@@ -325,18 +282,6 @@ void OperatorAndChainAnsFloat(void) {
 void OperatorAndChainAnsVariable(void) {
 }
 
-void OperatorXorIntVariable(void) {
-}
-
-void OperatorXorIntChainAns(void) {
-}
-
-void OperatorXorFloatVariable(void) {
-}
-
-void OperatorXorFloatChainAns(void) {
-}
-
 void OperatorXorVariableInt(void) {
 }
 
@@ -344,9 +289,6 @@ void OperatorXorVariableFloat(void) {
 }
 
 void OperatorXorVariableVariable(void) {
-}
-
-void OperatorXorVariableChainAns(void) {
 }
 
 void OperatorXorChainAnsInt(void) {
@@ -358,18 +300,6 @@ void OperatorXorChainAnsFloat(void) {
 void OperatorXorChainAnsVariable(void) {
 }
 
-void OperatorOrIntVariable(void) {
-}
-
-void OperatorOrIntChainAns(void) {
-}
-
-void OperatorOrFloatVariable(void) {
-}
-
-void OperatorOrFloatChainAns(void) {
-}
-
 void OperatorOrVariableInt(void) {
 }
 
@@ -377,9 +307,6 @@ void OperatorOrVariableFloat(void) {
 }
 
 void OperatorOrVariableVariable(void) {
-}
-
-void OperatorOrVariableChainAns(void) {
 }
 
 void OperatorOrChainAnsInt(void) {
@@ -391,18 +318,6 @@ void OperatorOrChainAnsFloat(void) {
 void OperatorOrChainAnsVariable(void) {
 }
 
-void OperatorEQIntVariable(void) {
-}
-
-void OperatorEQIntChainAns(void) {
-}
-
-void OperatorEQFloatVariable(void) {
-}
-
-void OperatorEQFloatChainAns(void) {
-}
-
 void OperatorEQVariableInt(void) {
 }
 
@@ -410,9 +325,6 @@ void OperatorEQVariableFloat(void) {
 }
 
 void OperatorEQVariableVariable(void) {
-}
-
-void OperatorEQVariableChainAns(void) {
 }
 
 void OperatorEQChainAnsInt(void) {
@@ -556,18 +468,6 @@ void OperatorGEChainAnsFloat(void) {
 void OperatorGEChainAnsVariable(void) {
 }
 
-void OperatorNEIntVariable(void) {
-}
-
-void OperatorNEIntChainAns(void) {
-}
-
-void OperatorNEFloatVariable(void) {
-}
-
-void OperatorNEFloatChainAns(void) {
-}
-
 void OperatorNEVariableInt(void) {
 }
 
@@ -575,9 +475,6 @@ void OperatorNEVariableFloat(void) {
 }
 
 void OperatorNEVariableVariable(void) {
-}
-
-void OperatorNEVariableChainAns(void) {
 }
 
 void OperatorNEChainAnsInt(void) {
@@ -588,19 +485,6 @@ void OperatorNEChainAnsFloat(void) {
 
 void OperatorNEChainAnsVariable(void) {
 }
-
-void OperatorMulIntVariable(void) {
-}
-
-void OperatorMulIntChainAns(void) {
-}
-
-void OperatorMulFloatVariable(void) {
-}
-
-void OperatorMulFloatChainAns(void) {
-}
-
 void OperatorMulVariableInt(void) {
 }
 
@@ -608,9 +492,6 @@ void OperatorMulVariableFloat(void) {
 }
 
 void OperatorMulVariableVariable(void) {
-}
-
-void OperatorMulVariableChainAns(void) {
 }
 
 void OperatorMulChainAnsInt(void) {
@@ -655,18 +536,6 @@ void OperatorDivChainAnsFloat(void) {
 void OperatorDivChainAnsVariable(void) {
 }
 
-void OperatorAddIntVariable(void) {
-}
-
-void OperatorAddIntChainAns(void) {
-}
-
-void OperatorAddFloatVariable(void) {
-}
-
-void OperatorAddFloatChainAns(void) {
-}
-
 void OperatorAddVariableInt(void) {
 }
 
@@ -674,9 +543,6 @@ void OperatorAddVariableFloat(void) {
 }
 
 void OperatorAddVariableVariable(void) {
-}
-
-void OperatorAddVariableChainAns(void) {
 }
 
 void OperatorAddChainAnsInt(void) {
@@ -741,16 +607,16 @@ void (*operatorsPointers[272])(void) = {
     
     OperatorError,
     OperatorError,
-    OperatorBitAndIntVariable,
-    OperatorBitAndIntChainAns,
     OperatorError,
     OperatorError,
-    OperatorBitAndFloatVariable,
-    OperatorBitAndFloatChainAns,
+    OperatorError,
+    OperatorError,
+    OperatorError,
+    OperatorError,
     OperatorBitAndVariableInt,
     OperatorBitAndVariableFloat,
     OperatorBitAndVariableVariable,
-    OperatorBitAndVariableChainAns,
+    OperatorError,
     OperatorBitAndChainAnsInt,
     OperatorBitAndChainAnsFloat,
     OperatorBitAndChainAnsVariable,
@@ -758,16 +624,16 @@ void (*operatorsPointers[272])(void) = {
     
     OperatorError,
     OperatorError,
-    OperatorBitOrIntVariable,
-    OperatorBitOrIntChainAns,
     OperatorError,
     OperatorError,
-    OperatorBitOrFloatVariable,
-    OperatorBitOrFloatChainAns,
+    OperatorError,
+    OperatorError,
+    OperatorError,
+    OperatorError,
     OperatorBitOrVariableInt,
     OperatorBitOrVariableFloat,
     OperatorBitOrVariableVariable,
-    OperatorBitOrVariableChainAns,
+    OperatorError,
     OperatorBitOrChainAnsInt,
     OperatorBitOrChainAnsFloat,
     OperatorBitOrChainAnsVariable,
@@ -775,16 +641,16 @@ void (*operatorsPointers[272])(void) = {
     
     OperatorError,
     OperatorError,
-    OperatorBitXorIntVariable,
-    OperatorBitXorIntChainAns,
     OperatorError,
     OperatorError,
-    OperatorBitXorFloatVariable,
-    OperatorBitXorFloatChainAns,
+    OperatorError,
+    OperatorError,
+    OperatorError,
+    OperatorError,
     OperatorBitXorVariableInt,
     OperatorBitXorVariableFloat,
     OperatorBitXorVariableVariable,
-    OperatorBitXorVariableChainAns,
+    OperatorError,
     OperatorBitXorChainAnsInt,
     OperatorBitXorChainAnsFloat,
     OperatorBitXorChainAnsVariable,
@@ -792,16 +658,16 @@ void (*operatorsPointers[272])(void) = {
     
     OperatorError,
     OperatorError,
-    OperatorAndIntVariable,
-    OperatorAndIntChainAns,
     OperatorError,
     OperatorError,
-    OperatorAndFloatVariable,
-    OperatorAndFloatChainAns,
+    OperatorError,
+    OperatorError,
+    OperatorError,
+    OperatorError,
     OperatorAndVariableInt,
     OperatorAndVariableFloat,
     OperatorAndVariableVariable,
-    OperatorAndVariableChainAns,
+    OperatorError,
     OperatorAndChainAnsInt,
     OperatorAndChainAnsFloat,
     OperatorAndChainAnsVariable,
@@ -809,16 +675,16 @@ void (*operatorsPointers[272])(void) = {
     
     OperatorError,
     OperatorError,
-    OperatorXorIntVariable,
-    OperatorXorIntChainAns,
     OperatorError,
     OperatorError,
-    OperatorXorFloatVariable,
-    OperatorXorFloatChainAns,
+    OperatorError,
+    OperatorError,
+    OperatorError,
+    OperatorError,
     OperatorXorVariableInt,
     OperatorXorVariableFloat,
     OperatorXorVariableVariable,
-    OperatorXorVariableChainAns,
+    OperatorError,
     OperatorXorChainAnsInt,
     OperatorXorChainAnsFloat,
     OperatorXorChainAnsVariable,
@@ -826,16 +692,16 @@ void (*operatorsPointers[272])(void) = {
     
     OperatorError,
     OperatorError,
-    OperatorOrIntVariable,
-    OperatorOrIntChainAns,
     OperatorError,
     OperatorError,
-    OperatorOrFloatVariable,
-    OperatorOrFloatChainAns,
+    OperatorError,
+    OperatorError,
+    OperatorError,
+    OperatorError,
     OperatorOrVariableInt,
     OperatorOrVariableFloat,
     OperatorOrVariableVariable,
-    OperatorOrVariableChainAns,
+    OperatorError,
     OperatorOrChainAnsInt,
     OperatorOrChainAnsFloat,
     OperatorOrChainAnsVariable,
@@ -843,16 +709,16 @@ void (*operatorsPointers[272])(void) = {
     
     OperatorError,
     OperatorError,
-    OperatorEQIntVariable,
-    OperatorEQIntChainAns,
     OperatorError,
     OperatorError,
-    OperatorEQFloatVariable,
-    OperatorEQFloatChainAns,
+    OperatorError,
+    OperatorError,
+    OperatorError,
+    OperatorError,
     OperatorEQVariableInt,
     OperatorEQVariableFloat,
     OperatorEQVariableVariable,
-    OperatorEQVariableChainAns,
+    OperatorError,
     OperatorEQChainAnsInt,
     OperatorEQChainAnsFloat,
     OperatorEQChainAnsVariable,
@@ -928,16 +794,16 @@ void (*operatorsPointers[272])(void) = {
     
     OperatorError,
     OperatorError,
-    OperatorNEIntVariable,
-    OperatorNEIntChainAns,
     OperatorError,
     OperatorError,
-    OperatorNEFloatVariable,
-    OperatorNEFloatChainAns,
+    OperatorError,
+    OperatorError,
+    OperatorError,
+    OperatorError,
     OperatorNEVariableInt,
     OperatorNEVariableFloat,
     OperatorNEVariableVariable,
-    OperatorNEVariableChainAns,
+    OperatorError,
     OperatorNEChainAnsInt,
     OperatorNEChainAnsFloat,
     OperatorNEChainAnsVariable,
@@ -945,16 +811,16 @@ void (*operatorsPointers[272])(void) = {
     
     OperatorError,
     OperatorError,
-    OperatorMulIntVariable,
-    OperatorMulIntChainAns,
     OperatorError,
     OperatorError,
-    OperatorMulFloatVariable,
-    OperatorMulFloatChainAns,
+    OperatorError,
+    OperatorError,
+    OperatorError,
+    OperatorError,
     OperatorMulVariableInt,
     OperatorMulVariableFloat,
     OperatorMulVariableVariable,
-    OperatorMulVariableChainAns,
+    OperatorError,
     OperatorMulChainAnsInt,
     OperatorMulChainAnsFloat,
     OperatorMulChainAnsVariable,
@@ -979,16 +845,16 @@ void (*operatorsPointers[272])(void) = {
     
     OperatorError,
     OperatorError,
-    OperatorAddIntVariable,
-    OperatorAddIntChainAns,
     OperatorError,
     OperatorError,
-    OperatorAddFloatVariable,
-    OperatorAddFloatChainAns,
+    OperatorError,
+    OperatorError,
+    OperatorError,
+    OperatorError,
     OperatorAddVariableInt,
     OperatorAddVariableFloat,
     OperatorAddVariableVariable,
-    OperatorAddVariableChainAns,
+    OperatorError,
     OperatorAddChainAnsInt,
     OperatorAddChainAnsFloat,
     OperatorAddChainAnsVariable,

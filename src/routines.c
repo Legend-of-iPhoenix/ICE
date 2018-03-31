@@ -1259,7 +1259,7 @@ const char *tokenStrings[] = {
 	"eval("
 };
 
-int grabString(uint8_t **outputPtr, bool stopAtStoreAndString) {
+int grabString(uint8_t **outputPtr, bool stopAtStoreAndString, bool allowSquish) {
     char tempString[16];
     uint24_t output, a;
 
