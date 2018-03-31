@@ -32,6 +32,12 @@ typedef struct {
     uint8_t (*functionPtr)(uint8_t);
 } function_t;
 
+typedef struct {
+    uint8_t returnRegister;
+    uint8_t amountOfArgs;
+    uint8_t smallArgs;
+} C_function_t;
+
 extern const function_t functions[AMOUNT_OF_FUNCTIONS];
 
 float execFunc(uint8_t func, float operand1, float operand2);

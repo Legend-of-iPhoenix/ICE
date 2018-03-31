@@ -2,7 +2,7 @@
 #define MAIN_H
 
 #define AMOUNT_OF_GRAPHX_FUNCTIONS 92
-#define AMOUNT_OF_FILEIOC_FUNCTIONS 21
+#define AMOUNT_OF_FILEIOC_FUNCTIONS 24
 
 #define STACK_SIZE 500
 #define SIZEOF_KEYPAD_DATA 18
@@ -38,7 +38,7 @@ enum {
 };
 
 typedef struct {
-    char     name[20];
+    char     name[21];
     uint24_t addr;
     uint24_t offset;
     uint24_t dataOffsetElements;

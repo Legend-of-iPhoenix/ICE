@@ -144,13 +144,14 @@ uint8_t compileOperator(uint24_t index) {
             return E_ICE_ERROR;
         }
         
-        // Call chain push function
+        // Call the right CHAIN_PUSH | CHAIN_ANS function
+        (*operatorsChainPushPointers[operatorIndex])();
     } else {
         if (type1 == type2 && (type1 <= TYPE_FLOAT || type1 == TYPE_CHAIN_ANS)) {
             return E_ICE_ERROR;
         }
         
-        if (type1 == TYPE_BYTE || type2 == TYPE_BYTE) {
+        if (type1 == TYPE_BYTE || type2 == TYPE_BYTE || (op == tStore && type2 != TYPE_VARIABLE)) {
             return E_SYNTAX;
         }
         
@@ -180,34 +181,16 @@ void OperatorError(void) {
 void OperatorStoreIntVariable(void) {
 }
 
-void OperatorStoreIntChainAns(void) {
-}
-
 void OperatorStoreFloatVariable(void) {
-}
-
-void OperatorStoreFloatChainAns(void) {
-}
-
-void OperatorStoreVariableInt(void) {
-}
-
-void OperatorStoreVariableFloat(void) {
 }
 
 void OperatorStoreVariableVariable(void) {
 }
 
-void OperatorStoreVariableChainAns(void) {
-}
-
-void OperatorStoreChainAnsInt(void) {
-}
-
-void OperatorStoreChainAnsFloat(void) {
-}
-
 void OperatorStoreChainAnsVariable(void) {
+}
+
+void OperatorStoreChainPushChainAns(void) {
 }
 
 void OperatorBitAndVariableInt(void) {
@@ -228,6 +211,9 @@ void OperatorBitAndChainAnsFloat(void) {
 void OperatorBitAndChainAnsVariable(void) {
 }
 
+void OperatorBitAndChainPushChainAns(void) {
+}
+
 void OperatorBitOrVariableInt(void) {
 }
 
@@ -244,6 +230,9 @@ void OperatorBitOrChainAnsFloat(void) {
 }
 
 void OperatorBitOrChainAnsVariable(void) {
+}
+
+void OperatorBitOrChainPushChainAns(void) {
 }
 
 void OperatorBitXorVariableInt(void) {
@@ -264,6 +253,9 @@ void OperatorBitXorChainAnsFloat(void) {
 void OperatorBitXorChainAnsVariable(void) {
 }
 
+void OperatorBitXorChainPushChainAns(void) {
+}
+
 void OperatorAndVariableInt(void) {
 }
 
@@ -280,6 +272,9 @@ void OperatorAndChainAnsFloat(void) {
 }
 
 void OperatorAndChainAnsVariable(void) {
+}
+
+void OperatorAndChainPushChainAns(void) {
 }
 
 void OperatorXorVariableInt(void) {
@@ -300,6 +295,9 @@ void OperatorXorChainAnsFloat(void) {
 void OperatorXorChainAnsVariable(void) {
 }
 
+void OperatorXorChainPushChainAns(void) {
+}
+
 void OperatorOrVariableInt(void) {
 }
 
@@ -318,6 +316,9 @@ void OperatorOrChainAnsFloat(void) {
 void OperatorOrChainAnsVariable(void) {
 }
 
+void OperatorOrChainPushChainAns(void) {
+}
+
 void OperatorEQVariableInt(void) {
 }
 
@@ -334,6 +335,9 @@ void OperatorEQChainAnsFloat(void) {
 }
 
 void OperatorEQChainAnsVariable(void) {
+}
+
+void OperatorEQChainPushChainAns(void) {
 }
 
 void OperatorLTIntVariable(void) {
@@ -369,6 +373,9 @@ void OperatorLTChainAnsFloat(void) {
 void OperatorLTChainAnsVariable(void) {
 }
 
+void OperatorLTChainPushChainAns(void) {
+}
+
 void OperatorGTIntVariable(void) {
 }
 
@@ -400,6 +407,9 @@ void OperatorGTChainAnsFloat(void) {
 }
 
 void OperatorGTChainAnsVariable(void) {
+}
+
+void OperatorGTChainPushChainAns(void) {
 }
 
 void OperatorLEIntVariable(void) {
@@ -435,6 +445,9 @@ void OperatorLEChainAnsFloat(void) {
 void OperatorLEChainAnsVariable(void) {
 }
 
+void OperatorLEChainPushChainAns(void) {
+}
+
 void OperatorGEIntVariable(void) {
 }
 
@@ -468,23 +481,17 @@ void OperatorGEChainAnsFloat(void) {
 void OperatorGEChainAnsVariable(void) {
 }
 
-void OperatorNEVariableInt(void) {
+void OperatorGEChainPushChainAns(void) {
 }
 
-void OperatorNEVariableFloat(void) {
-}
+#define OperatorNEVariableInt       OperatorEQVariableInt
+#define OperatorNEVariableFloat     OperatorEQVariableFloat
+#define OperatorNEVariableVariable  OperatorEQVariableVariable
+#define OperatorNEChainAnsInt       OperatorEQChainAnsInt
+#define OperatorNEChainAnsFloat     OperatorEQChainAnsFloat
+#define OperatorNEChainAnsVariable  OperatorEQChainAnsVariable
+#define OperatorNEChainPushChainAns OperatorEQChainPushChainAns
 
-void OperatorNEVariableVariable(void) {
-}
-
-void OperatorNEChainAnsInt(void) {
-}
-
-void OperatorNEChainAnsFloat(void) {
-}
-
-void OperatorNEChainAnsVariable(void) {
-}
 void OperatorMulVariableInt(void) {
 }
 
@@ -501,6 +508,9 @@ void OperatorMulChainAnsFloat(void) {
 }
 
 void OperatorMulChainAnsVariable(void) {
+}
+
+void OperatorMulChainPushChainAns(void) {
 }
 
 void OperatorDivIntVariable(void) {
@@ -536,6 +546,9 @@ void OperatorDivChainAnsFloat(void) {
 void OperatorDivChainAnsVariable(void) {
 }
 
+void OperatorDivChainPushChainAns(void) {
+}
+
 void OperatorAddVariableInt(void) {
 }
 
@@ -552,6 +565,9 @@ void OperatorAddChainAnsFloat(void) {
 }
 
 void OperatorAddChainAnsVariable(void) {
+}
+
+void OperatorAddChainPushChainAns(void) {
 }
 
 void OperatorSubIntVariable(void) {
@@ -587,21 +603,24 @@ void OperatorSubChainAnsFloat(void) {
 void OperatorSubChainAnsVariable(void) {
 }
 
+void OperatorSubChainPushChainAns(void) {
+}
+
 void (*operatorsPointers[272])(void) = {
     OperatorError,
     OperatorError,
     OperatorStoreIntVariable,
-    OperatorStoreIntChainAns,
+    OperatorError,
     OperatorError,
     OperatorError,
     OperatorStoreFloatVariable,
-    OperatorStoreFloatChainAns,
-    OperatorStoreVariableInt,
-    OperatorStoreVariableFloat,
+    OperatorError,
+    OperatorError,
+    OperatorError,
     OperatorStoreVariableVariable,
-    OperatorStoreVariableChainAns,
-    OperatorStoreChainAnsInt,
-    OperatorStoreChainAnsFloat,
+    OperatorError,
+    OperatorError,
+    OperatorError,
     OperatorStoreChainAnsVariable,
     OperatorError,
     
@@ -876,4 +895,24 @@ void (*operatorsPointers[272])(void) = {
     OperatorSubChainAnsFloat,
     OperatorSubChainAnsVariable,
     OperatorError
+};
+
+void (*operatorsChainPushPointers[17])(void) = {
+    OperatorError,
+    OperatorBitAndChainPushChainAns,
+    OperatorBitOrChainPushChainAns,
+    OperatorBitXorChainPushChainAns,
+    OperatorAndChainPushChainAns,
+    OperatorXorChainPushChainAns,
+    OperatorOrChainPushChainAns,
+    OperatorEQChainPushChainAns,
+    OperatorLTChainPushChainAns,
+    OperatorGTChainPushChainAns,
+    OperatorLEChainPushChainAns,
+    OperatorGEChainPushChainAns,
+    OperatorNEChainPushChainAns,
+    OperatorMulChainPushChainAns,
+    OperatorDivChainPushChainAns,
+    OperatorAddChainPushChainAns,
+    OperatorSubChainPushChainAns
 };
