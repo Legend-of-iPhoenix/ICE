@@ -1,0 +1,193 @@
+isFloat1 = isFloat(type1,operand1)
+isFloat2 = isFloat(type2,operand2)
+
+isFloat(type,x):
+	type == TYPE_VARIABLE:
+		prescan.variables[x].type
+	type == TYPE_CHAIN_ANS:
+		x.ansType
+	type == TYPE_CHAIN_PUSH:
+		x.ansType
+
+Swap:
+	temp = type1
+	type1 = type2
+	type2 = temp
+	temp = isFloat1
+	isFloat1 = isFloat2
+	isFloat2 = temp
+	temp = operand1
+	operand1 = operand2
+	operand2 = temp
+	
+Int + Variable:
+	-> Swap
+	-> Variable + Int
+
+Int + ChainAns:
+	-> Swap
+	-> ChainAns + Int
+
+Float + Variable:
+	-> Swap
+	-> Variable + Float
+
+Float + ChainAns:
+	-> Swap
+	-> ChainAns + Float
+
+Variable + Int:
+	isFloat1 ? 
+		ld a, bc, (ix+var)
+	:
+		ld hl, (ix+var)
+	-> ChainAns + Int
+
+Variable + Float:
+	isFloat1 ? 
+		ld a, bc, (ix+var)
+	:
+		ld bc, (ix+var) \ call __ultof
+	-> ChainAns + Float
+
+Variable + Variable:
+	isFloat1 ?
+		isFloat2 ?
+			ld a, bc, (ix+var1)
+			-> ChainAns + Variable
+		:
+			ld bc, (ix+var2) \ call __ultof \ ld e, hl, (ix+var1) \ call __fadd
+	:
+		isFloat2 ?
+			-> Swap
+			-> Variable1 + Variable2
+		:
+			ld hl, (ix+var1)
+			-> ChainAns + Variable
+
+Variable + ChainAns:
+	-> Swap
+	-> ChainAns + Variable
+
+ChainAns + Int:
+	isFloat1 ?
+		ld e, hl, num \ call __fadd
+	:
+		Add number to HL
+
+ChainAns + Float:
+	!isFloat1 ?
+		push hl \ pop bc \ call __ultof
+	ld e, hl, num \ call __fadd
+
+ChainAns + Variable:
+	isFloat1 ?
+		isFloat2 ? 
+			push bc \ pop hl \ ld e, a \ ld bc, (ix+var) \ call __ultof \ call __fadd
+			return
+	:
+		isFloat2 ?
+			push hl \ pop bc \ call __ultof
+		:
+			ld bc, (ix+var) \ add hl, bc
+			return
+	ld e, hl, (ix+var) \ call __fadd
+
+ChainPush + ChainAns:
+	isFloat1 ?
+		!isFloat2 ?
+			push hl \ pop bc \ call __ultof
+		pop hl \ pop de \ call __fadd
+	:
+		isFloat2 ?
+			push bc \ pop hl \ ld e, a \ pop bc \ call __ultof \ call __fadd
+		:
+			pop bc \ add hl, bc
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+	
+
+Number + Variable:
+	-> Swap
+	-> Variable + Number
+
+Number + ChainAns:
+	-> Swap
+	-> ChainAns + Number
+
+Variable + Number:
+	isFloat1 ?
+		ld a, bc, (ix+var)
+	:
+		isFloat2 ?
+			ld bc, (ix+var) \ call __ultof
+			isFloat1 = true
+		:
+			ld hl, (ix+var)
+	-> ChainAns + Number
+
+Variable + Variable:
+	isFloat1 ?
+		isFloat2 ?
+			ld a, bc, (ix+var1)
+			-> ChainAns + Variable
+		:
+			ld bc, (ix+var2) \ call __ultof \ ld e, hl, (ix+var1) \ call __fadd
+	:
+		isFloat2 ?
+			-> Swap
+			-> Variable1 + Variable2
+		:
+			ld hl, (ix+var1)
+			-> ChainAns + Variable
+
+Variable + ChainAns:
+	-> Swap
+	-> ChainAns + Variable
+
+ChainAns + Number:
+	!isFloat1 ?
+		isFloat2 ?
+			push hl \ pop bc \ call __ultof
+		:
+			inc hl / dec hl / ld de, num - add hl, de
+			return
+	ld e, hl, num \ call __fadd
+
+ChainAns + Variable:
+	isFloat1 ?
+		isFloat2 ? 
+			push bc \ pop hl \ ld e, a \ ld bc, (ix+var) \ call __ultof \ call __fadd
+			return
+	:
+		isFloat2 ?
+			push hl \ pop bc \ call __ultof
+		:
+			ld bc, (ix+var) \ add hl, bc
+			return
+	ld e, hl, (ix+var) \ call __fadd
+
+ChainPush + ChainAns:
+	isFloat1 ?
+		!isFloat2 ?
+			push hl \ pop bc \ call __ultof
+		pop hl \ pop de \ call __fadd
+	:
+		isFloat2 ?
+			push bc \ pop hl \ ld e, a \ pop bc \ call __ultof \ call __fadd
+		:
+			pop bc \ add hl, bc

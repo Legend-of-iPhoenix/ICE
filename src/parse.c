@@ -115,7 +115,7 @@ uint8_t ParseNumber(uint8_t tok) {
     }
     
     // Push to the stack
-    newElement.type = TYPE_NUMBER;
+    newElement.type = TYPE_INT + amountOfPts;
     newElement.operand.num = atof(input);
     outputStackPush(newElement);
     
@@ -136,7 +136,7 @@ uint8_t ParseEE(uint8_t tok) {
     SeekMinus1();
     
     // Push to the stack
-    newElement.type = TYPE_NUMBER;
+    newElement.type = TYPE_INT;
     newElement.operand.num = output;
     outputStackPush(newElement);
     
@@ -157,7 +157,7 @@ uint8_t ParsePi(uint8_t tok) {
     SeekMinus1();
     
     // Push to the stack
-    newElement.type = TYPE_NUMBER;
+    newElement.type = TYPE_INT;
     newElement.operand.num = output;
     outputStackPush(newElement);
     
@@ -177,7 +177,7 @@ uint8_t ParseChs(uint8_t tok) {
         element_t newElement = {0};
         
         // Push to the stack
-        newElement.type = TYPE_NUMBER;
+        newElement.type = TYPE_INT;
         newElement.operand.num = -1;
         outputStackPush(newElement);
         
@@ -192,7 +192,7 @@ uint8_t ParseDegree(uint8_t tok) {
     canUseMask = false;
     
     tok = _getc();
-    newElement.type = TYPE_NUMBER;
+    newElement.type = TYPE_INT;
     if (tok >= tA && tok <= tTheta) {
         newElement.operand.num = IX_VARIABLES + prescan.variables[GetVariableOffset(tok)].offset;
     } else if (tok == tVarLst) {
@@ -223,7 +223,7 @@ uint8_t ParseOSList(uint8_t tok) {
         stackPush(newElement);
     } else {
         SeekMinus1();
-        newElement.type = TYPE_NUMBER;
+        newElement.type = TYPE_INT;
         newElement.operand.num = prescan.OSLists[tok];
         outputStackPush(newElement);
     }
@@ -239,7 +239,7 @@ uint8_t ParseOSString(uint8_t tok) {
     
     // Push to the stack
     newElement.allowStoreTo = true;
-    newElement.type = TYPE_NUMBER;
+    newElement.type = TYPE_INT;
     newElement.operand.num = prescan.OSStrings[_getc()];
     outputStackPush(newElement);
     
@@ -253,7 +253,7 @@ uint8_t ParseString(uint8_t tok) {
     canUseMask = false;
     
     newElement.needRelocate = true;
-    newElement.type = TYPE_NUMBER;
+    newElement.type = TYPE_INT;
     
     return VALID;
 }
@@ -530,7 +530,8 @@ uint8_t ParseExpression(void) {
     // Parse the last (or only) element
     /*firstElement = getOutputElement(0);
     switch (firstElement.type) {
-        case TYPE_NUMBER:
+        case TYPE_INT:
+        case TYPE_FLOAT:
         case TYPE_VARIABLE:
         case TYPE_CHAIN_ANS:
         default:
@@ -552,7 +553,7 @@ void OptimizeExpression(void) {
         
         // Check for number | number | operator
         if (index > 1) {
-            if (outputPrevPrev.type == TYPE_NUMBER && outputPrev.type == TYPE_NUMBER && outputCurr.type == TYPE_OPERATOR && outputCurr.operand.op.type != tStore) {
+            if (outputPrevPrev.type <= TYPE_FLOAT && outputPrev.type <= TYPE_FLOAT && outputCurr.type == TYPE_OPERATOR && outputCurr.operand.op.type != tStore) {
                 // Replace the value and remove the other + operator
                 outputPrevPrev.operand.num = execOp(outputCurr.operand.op.type, outputPrevPrev.operand.num, outputPrev.operand.num);
                 setOutputElement(outputPrevPrev, index - 2);
@@ -573,7 +574,7 @@ void OptimizeExpression(void) {
             // Enough arguments and allow to change
             if (amountOfArgs <= index && functions[functionIndex].disallowNumArgs) {
                 // Both arguments should be a number
-                if (outputPrev.type == TYPE_NUMBER && (amountOfArgs == 1 || outputPrevPrev.type == TYPE_NUMBER)) {
+                if (outputPrev.type <= TYPE_FLOAT && (amountOfArgs == 1 || outputPrevPrev.type <= TYPE_FLOAT)) {
                     removeOutputElement(index);
                     
                     // Parse and store

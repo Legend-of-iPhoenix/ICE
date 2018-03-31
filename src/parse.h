@@ -2,7 +2,9 @@
 #define PARSE_H
 
 enum {
-    TYPE_NUMBER,
+    TYPE_BYTE,
+    TYPE_INT,
+    TYPE_FLOAT,
     TYPE_VARIABLE,
     TYPE_CHAIN_ANS,
     TYPE_CHAIN_PUSH,
@@ -16,12 +18,6 @@ enum {
     TYPE_MASK_U8,
     TYPE_MASK_U16,
     TYPE_MASK_U24
-};
-
-enum {
-    TYPE_BYTE,
-    TYPE_INT,
-    TYPE_FLOAT
 };
 
 void skipLine(void);
