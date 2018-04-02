@@ -1,0 +1,65 @@
+C CE SDK Version 8.0 
+C:\programming\Hobby\C\ICE\src\routines.c
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(88,116) :	ERROR (193) Missing "56" detected
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(88,116) :	ERROR (100) Syntax error
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(89,51) :	ERROR (155) Expression must be arithmetic or pointer type
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(89,53) :	ERROR (193) Missing "56" detected
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(91,11) :	ERROR (100) Syntax error
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(94,17) :	WARNING (197) No function prototype "PUSH_AF" in scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(99,5) :	ERROR (100) Syntax error
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(99,23) :	ERROR (193) Missing "62" detected
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(99,23) :	ERROR (100) Syntax error
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(106,5) :	ERROR (100) Syntax error
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(106,27) :	ERROR (108) Identifier "uint8_t" is not a variable or enumeration constant name
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(106,27) :	ERROR (100) Syntax error
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(107,16) :	ERROR (128) Identifier "reg2" not defined within current scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(118,5) :	ERROR (100) Syntax error
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(118,24) :	ERROR (193) Missing "62" detected
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(118,24) :	ERROR (100) Syntax error
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(146,5) :	ERROR (100) Syntax error
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(148,47) :	ERROR (128) Identifier "offset" not defined within current scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(150,48) :	ERROR (128) Identifier "offset" not defined within current scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(155,5) :	ERROR (100) Syntax error
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(157,47) :	ERROR (128) Identifier "offset" not defined within current scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(159,48) :	ERROR (128) Identifier "offset" not defined within current scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(164,5) :	ERROR (100) Syntax error
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(164,37) :	ERROR (108) Identifier "uint24_t" is not a variable or enumeration constant name
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(164,37) :	ERROR (100) Syntax error
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(169,23) :	ERROR (128) Identifier "outValue" not defined within current scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(171,60) :	ERROR (128) Identifier "opcodes" not defined within current scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(171,63) :	ERROR (141) Object cannot be subscripted
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(171,68) :	WARNING (222) Statement has no effect
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(176,60) :	ERROR (128) Identifier "opcodes" not defined within current scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(176,63) :	ERROR (141) Object cannot be subscripted
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(176,68) :	WARNING (222) Statement has no effect
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(181,60) :	ERROR (128) Identifier "opcodes" not defined within current scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(181,63) :	ERROR (141) Object cannot be subscripted
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(181,68) :	WARNING (222) Statement has no effect
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(185,60) :	ERROR (128) Identifier "opcodes" not defined within current scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(185,63) :	ERROR (141) Object cannot be subscripted
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(185,68) :	WARNING (222) Statement has no effect
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(190,56) :	ERROR (128) Identifier "opcodes" not defined within current scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(190,59) :	ERROR (141) Object cannot be subscripted
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(190,64) :	WARNING (222) Statement has no effect
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(193,60) :	ERROR (128) Identifier "opcodes" not defined within current scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(193,63) :	ERROR (141) Object cannot be subscripted
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(193,68) :	WARNING (222) Statement has no effect
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(198,56) :	ERROR (128) Identifier "opcodes" not defined within current scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(198,59) :	ERROR (141) Object cannot be subscripted
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(198,64) :	WARNING (222) Statement has no effect
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(206,56) :	ERROR (128) Identifier "opcodes" not defined within current scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(206,59) :	ERROR (141) Object cannot be subscripted
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(206,64) :	WARNING (222) Statement has no effect
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(211,52) :	ERROR (128) Identifier "opcodes" not defined within current scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(211,55) :	ERROR (141) Object cannot be subscripted
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(211,60) :	WARNING (222) Statement has no effect
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(212,54) :	ERROR (128) Identifier "outValue" not defined within current scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(218,5) :	ERROR (100) Syntax error
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(219,16) :	ERROR (128) Identifier "reg2" not defined within current scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(223,45) :	ERROR (128) Identifier "val" not defined within current scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(224,24) :	ERROR (128) Identifier "val" not defined within current scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(240,45) :	ERROR (128) Identifier "val" not defined within current scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(243,53) :	ERROR (128) Identifier "val" not defined within current scope
+C:\PROGRAMMING\HOBBY\C\ICE\SRC\ROUTINES.C	(248,27) :	ERROR (128) Identifier "val" not defined within current scope
+
+P1: ***** Maximum error count exceeded *****

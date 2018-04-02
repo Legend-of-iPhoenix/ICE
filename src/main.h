@@ -140,7 +140,7 @@ typedef struct {
 
     uint8_t  ZeroCarryFlagRemoveAmountOfBytes;
     uint8_t  outputRegister;
-    uint8_t  outputReturnRegister;
+    uint8_t  returnRegister;
     uint8_t  SizeOfOutputNumber;
 
     uint24_t outputNumber;

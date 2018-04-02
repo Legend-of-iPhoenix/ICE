@@ -300,7 +300,8 @@ const function_t functions[AMOUNT_OF_FUNCTIONS] = {
     {tLBrace,   0,              1,   0, FunctionBrace},
     {tVarLst,   0,              1,   0, FunctionOSList},
     {tGetKey,   0,              -1,  0, FunctionGetKey},
-/* Never change the first 3 elements of this function array, these indexes are hardcoded and important! */
+    {tLParen,   0,              1,   0, FunctionParen},
+/* Never change the first 4 elements of this function array, these indexes are hardcoded and important! */
     {tNot,      0,              1,   1, FunctionNot},
     {tMin,      0,              2,   1, FunctionMinMax},
     {tMax,      0,              2,   1, FunctionMinMax},
@@ -312,7 +313,6 @@ const function_t functions[AMOUNT_OF_FUNCTIONS] = {
     {tCos,      0,              1,   1, FunctionSinCos},
     {tRand,     0,              0,   0, FunctionRand},
     {tAns,      0,              0,   0, FunctionAns},
-    {tLParen,   0,              1,   0, FunctionParen},
     {tLBrack,   0,              1,   0, FunctionBrack},
     {tInt,      0,              1,   1, FunctionInt},
     {tAbs,      0,              1,   1, FunctionAbs},

@@ -14,43 +14,33 @@
 #define LB_W 160
 #define LB_H 10
 
-bool IsA2ByteTok(uint8_t tok) {
-    uint8_t All2ByteTokens[9] = {tExtTok, tVarMat, tVarLst, tVarPict, tVarGDB, tVarOut, tVarSys, tVarStrng, t2ByteTok};
-    
-    return memchr(All2ByteTokens, tok, sizeof(All2ByteTokens)) || 0;
-}
+/**********************************************************
+* Register routines:
+*  - AnsToBC
+*  - AnsToDE
+*  - AnsToHL
+*  - MaybeAToHL
+*  - FloatAnsToEUHL
+*  - PushAns
+*  - ResetAllRegs
+*  - ResetReg
+*  - RegChangeHLDE
+**********************************************************/
 
-prog_t *GetProgramName(void) {
-    prog_t *ret;
-    uint8_t a = 0;
-    int token;
-
-    ret = malloc(sizeof(prog_t));
-    ret->errorCode = VALID;
-
-    while ((token = _getc()) != EOF && (uint8_t)token != tEnter) {
-        if (a == 8) {
-            ret->errorCode = E_INVALID_PROG;
-            return ret;
-        }
-        ret->prog[a++] = (uint8_t)token;
+void AnsToBC(void) {
+    if (expr.outputRegister == REGISTER_A) {
+        LD_BC_IMM(0);
+        LD_C_A();
+        reg.BCIsNumber = reg.AIsNumber;
+        reg.BCIsVariable = reg.AIsVariable;
+        reg.BCValue = reg.AValue;
+    } else if (expr.outputRegister == REGISTER_DE) {
+        PUSH_DE();
+        POP_BC();
+    } else {
+        PUSH_HL();
+        POP_BC();
     }
-    ret->prog[a] = 0;
-
-    return ret;
-}
-
-void ProgramPtrToOffsetStack(void) {
-    ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.programPtr + 1);
-    reg.allowedToOptimize = false;
-}
-
-void AnsToHL(void) {
-    MaybeAToHL();
-    if (expr.outputRegister == REGISTER_DE) {
-        EX_DE_HL();
-    }
-    expr.outputRegister = REGISTER_HL;
 }
 
 void AnsToDE(void) {
@@ -66,21 +56,109 @@ void AnsToDE(void) {
     expr.outputRegister = REGISTER_DE;
 }
 
-void AnsToBC(void) {
+void AnsToHL(void) {
+    MaybeAToHL();
+    if (expr.outputRegister == REGISTER_DE) {
+        EX_DE_HL();
+    }
+    expr.outputRegister = REGISTER_HL;
+}
+
+void MaybeAToHL(void) {
     if (expr.outputRegister == REGISTER_A) {
-        LD_BC_IMM(0);
-        LD_C_A();
-        reg.BCIsNumber = reg.AIsNumber;
-        reg.BCIsVariable = reg.AIsVariable;
-        reg.BCValue = reg.AValue;
-    } else {
-        PushHLDE();
-        POP_BC();
+        OR_A_A();
+        SBC_HL_HL();
+        LD_L_A();
+        reg.HLIsNumber = reg.AIsNumber;
+        reg.HLIsVariable = false;
+        reg.HLValue = reg.AValue;
+        expr.outputRegister = REGISTER_HL;
     }
 }
 
-void ClearAnsFlags(void) {
-    expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed = expr.AnsSetCarryFlag = expr.AnsSetCarryFlagReversed = false;
+void FloatAnsToEUHL(void) {
+    PUSH_BC();
+    POP_HL();
+    LD_E_A();
+}
+
+void PushAns(void) {
+    MaybeAToHL();
+    if (expr.outputRegister == REGISTER_BC) {
+        PUSH_BC();
+    } else if (expr.outputRegister == REGISTER_DE) {
+        PUSH_DE();
+    } else if (expr.outputRegister == REGISTER_HL) {
+        PUSH_HL();
+    } else {
+        PUSH_AF();
+        PUSH_BC();
+    }
+}
+
+void ResetAllRegs(void) {
+    ResetReg(REGISTER_HL);
+    ResetReg(REGISTER_DE);
+    ResetReg(REGISTER_BC);
+    ResetReg(REGISTER_A);
+}
+
+void ResetReg(uint8_t reg2) {
+    if (reg2 == REGISTER_HL) {
+        reg.HLIsNumber = reg.HLIsVariable = false;
+    } else if (reg2 == REGISTER_DE) {
+        reg.DEIsNumber = reg.DEIsVariable = false;
+    } else if (reg2 == REGISTER_BC) {
+        reg.BCIsNumber = reg.BCIsVariable = false;
+    } else {
+        reg.AIsNumber = reg.AIsVariable = false;
+    }
+}
+
+void RegChangeHLDE(void) {
+    uint8_t  temp8;
+    uint24_t temp24;
+
+    temp8 = reg.HLIsNumber;
+    reg.HLIsNumber = reg.DEIsNumber;
+    reg.DEIsNumber = temp8;
+    temp24 = reg.HLValue;
+    reg.HLValue = reg.DEValue;
+    reg.DEValue = temp24;
+
+    temp8 = reg.HLIsVariable;
+    reg.HLIsVariable = reg.DEIsVariable;
+    reg.DEIsVariable = temp8;
+    temp8 = reg.HLVariable;
+    reg.HLVariable = reg.DEVariable;
+    reg.DEVariable = temp8;
+}
+
+/**********************************************************
+* Output routines:
+*  - LD_A_BC_IND_IX_OFF
+*  - LD_E_HL_IND_IX_OFF
+*  - ChangeRegValue
+*  - LoadRegValue
+*  - LoadRegVariable
+**********************************************************/
+
+void LD_A_BC_IND_IX_OFF(uint8_t offset) {
+    output(uint16_t, 0x07DD);
+    output(uint8_t,  offset);
+    output(uint16_t, 0x7EDD);
+    output(uint8_t,  offset + 3);
+    ResetReg(REGISTER_BC);
+    ResetReg(REGISTER_A);
+}
+
+void LD_E_HL_IND_IX_OFF(uint8_t offset) {
+    output(uint16_t, 0x27DD);
+    output(uint8_t,  offset);
+    output(uint16_t, 0x5EDD);
+    output(uint8_t,  offset + 3);
+    ResetReg(REGISTER_HL);
+    ResetReg(REGISTER_DE);
 }
 
 void ChangeRegValue(uint24_t inValue, uint24_t outValue, uint8_t opcodes[7]) {
@@ -210,54 +288,57 @@ void LoadRegVariable(uint8_t reg2, uint8_t variable) {
     }
 }
 
-void ResetAllRegs(void) {
-    ResetReg(REGISTER_HL);
-    ResetReg(REGISTER_DE);
-    ResetReg(REGISTER_BC);
-    ResetReg(REGISTER_A);
+
+
+
+
+
+
+
+
+
+
+uint24_t get3ByteOfFloat(float x) {
+    return *(uint24_t*)&x;
 }
 
-void ResetReg(uint8_t reg2) {
-    if (reg2 == REGISTER_HL) {
-        reg.HLIsNumber = reg.HLIsVariable = false;
-    } else if (reg2 == REGISTER_DE) {
-        reg.DEIsNumber = reg.DEIsVariable = false;
-    } else if (reg2 == REGISTER_BC) {
-        reg.BCIsNumber = reg.BCIsVariable = false;
-    } else {
-        reg.AIsNumber = reg.AIsVariable = false;
+uint8_t getLastByteOfFloat(float x) {
+    return *(uint24_t*)((uint8_t*)&x + 3);
+}
+
+bool IsA2ByteTok(uint8_t tok) {
+    uint8_t All2ByteTokens[9] = {tExtTok, tVarMat, tVarLst, tVarPict, tVarGDB, tVarOut, tVarSys, tVarStrng, t2ByteTok};
+    
+    return memchr(All2ByteTokens, tok, sizeof(All2ByteTokens)) || 0;
+}
+
+prog_t *GetProgramName(void) {
+    prog_t *ret;
+    uint8_t a = 0;
+    int token;
+
+    ret = malloc(sizeof(prog_t));
+    ret->errorCode = VALID;
+
+    while ((token = _getc()) != EOF && (uint8_t)token != tEnter) {
+        if (a == 8) {
+            ret->errorCode = E_INVALID_PROG;
+            return ret;
+        }
+        ret->prog[a++] = (uint8_t)token;
     }
+    ret->prog[a] = 0;
+
+    return ret;
 }
 
-void RegChangeHLDE(void) {
-    uint8_t  temp8;
-    uint24_t temp24;
-
-    temp8 = reg.HLIsNumber;
-    reg.HLIsNumber = reg.DEIsNumber;
-    reg.DEIsNumber = temp8;
-    temp24 = reg.HLValue;
-    reg.HLValue = reg.DEValue;
-    reg.DEValue = temp24;
-
-    temp8 = reg.HLIsVariable;
-    reg.HLIsVariable = reg.DEIsVariable;
-    reg.DEIsVariable = temp8;
-    temp8 = reg.HLVariable;
-    reg.HLVariable = reg.DEVariable;
-    reg.DEVariable = temp8;
+void ProgramPtrToOffsetStack(void) {
+    ice.dataOffsetStack[ice.dataOffsetElements++] = (uint24_t*)(ice.programPtr + 1);
+    reg.allowedToOptimize = false;
 }
 
-void MaybeAToHL(void) {
-    if (expr.outputRegister == REGISTER_A) {
-        OR_A_A();
-        SBC_HL_HL();
-        LD_L_A();
-        reg.HLIsNumber = reg.AIsNumber;
-        reg.HLIsVariable = false;
-        reg.HLValue = reg.AValue;
-        expr.outputRegister = REGISTER_HL;
-    }
+void ClearAnsFlags(void) {
+    expr.AnsSetZeroFlag = expr.AnsSetZeroFlagReversed = expr.AnsSetCarryFlag = expr.AnsSetCarryFlagReversed = false;
 }
 
 void SeekMinus1(void) {
@@ -295,15 +376,6 @@ void MaybeLDIYFlags(void) {
     if (ice.modifiedIY) {
         LD_IY_IMM(flags);
         ice.modifiedIY = false;
-    }
-}
-
-void PushHLDE(void) {
-    MaybeAToHL();
-    if (expr.outputRegister == REGISTER_HL) {
-        PUSH_HL();
-    } else {
-        PUSH_DE();
     }
 }
 

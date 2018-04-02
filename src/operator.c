@@ -16,9 +16,12 @@ const uint8_t operatorPrecedence2[17] = {9, 6, 8, 8, 2, 1, 1, 3, 3, 3, 3, 3, 3, 
 const uint8_t operatorCanSwap[17]     = {0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0}; // Used for operators which can swap the operands, i.e. A*B = B*A
 static bool isFloat1;
 static bool isFloat2;
+extern bool isFloatExpression;
 static uint8_t op;
 static uint8_t type1;
 static uint8_t type2;
+static operand_t operand1;
+static operand_t operand2;
 static element_t outputCurr;
 static element_t outputPrev;
 static element_t outputPrevPrev;
@@ -135,9 +138,17 @@ uint8_t compileOperator(uint24_t index) {
     op             = outputCurr.operand.op.type;
     type1          = outputPrevPrev.type;
     type2          = outputPrev.type;
-    isFloat1       = (type1 == TYPE_FLOAT || (type1 == TYPE_VARIABLE && prescan.variables[outputPrevPrev.operand.var].type == TYPE_FLOAT));
-    isFloat2       = (type2 == TYPE_FLOAT || (type2 == TYPE_VARIABLE && prescan.variables[outputPrev.operand.var].type == TYPE_FLOAT));
+    isFloat1       = (type1 == TYPE_FLOAT || 
+                     (type1 == TYPE_VARIABLE && prescan.variables[outputPrevPrev.operand.var].type == TYPE_FLOAT) || 
+                     ((type1 == TYPE_CHAIN_ANS || type1 == TYPE_CHAIN_PUSH) && outputPrevPrev.operand.ansType == TYPE_FLOAT));
+    isFloat2       = (type2 == TYPE_FLOAT || 
+                     (type2 == TYPE_VARIABLE && prescan.variables[outputPrev.operand.var].type == TYPE_FLOAT) || 
+                     ((type2 == TYPE_CHAIN_ANS || type2 == TYPE_CHAIN_PUSH) && outputPrev.operand.ansType == TYPE_FLOAT));
+    operand1       = outputPrevPrev.operand;
+    operand2       = outputPrev.operand;
     operatorIndex  = getIndexOfOperator(op);
+    
+    expr.returnRegister = REGISTER_HL;
     
     if (type1 == TYPE_CHAIN_PUSH || type2 == TYPE_CHAIN_PUSH) {
         if (type2 != TYPE_CHAIN_ANS) {
@@ -159,20 +170,37 @@ uint8_t compileOperator(uint24_t index) {
             OperatorsSwap();
         }
         
-        (*operatorsPointers[operatorIndex * 17 + (type1 - 1) * 4 + type2])();
+        (*operatorsPointers[operatorIndex * 16 + (type1 - 1) * 4 + type2 - 1])();
+        
+        if (op == tAdd && (isFloat1 || isFloat2)) {
+            CALL(__fadd);
+        }
+    }
+    
+    if ((isFloatExpression = (isFloat1 | isFloat2))) {
+        expr.outputRegister = REGISTER_AUBC;
+    } else {
+        expr.outputRegister = expr.returnRegister;
     }
     
     return VALID;
 }
 
 void OperatorsSwap(void) {
-    uint8_t temp = isFloat1;
+    uint8_t temp;
+    operand_t temp2;
+    
+    temp = isFloat1;
     isFloat1 = isFloat2;
     isFloat2 = temp;
     
     temp = type1;
     type1 = type2;
     type2 = type1;
+    
+    temp2 = operand1;
+    operand1 = operand2;
+    operand2 = temp2;
 }
 
 void OperatorError(void) {
@@ -549,26 +577,158 @@ void OperatorDivChainAnsVariable(void) {
 void OperatorDivChainPushChainAns(void) {
 }
 
-void OperatorAddVariableInt(void) {
-}
-
-void OperatorAddVariableFloat(void) {
-}
-
-void OperatorAddVariableVariable(void) {
-}
-
 void OperatorAddChainAnsInt(void) {
+    float num = operand2.num;
+    
+    if (isFloat1) {
+        LD_HL_IMM(get3ByteOfFloat(num));
+        LD_E(getLastByteOfFloat(num));
+    } else {
+        uint8_t a;
+        uint24_t num2 = num;
+        
+        if (num2 < 5) {
+            for (a = 0; a < num2; a++) {
+                if (expr.outputRegister == REGISTER_HL) {
+                    INC_HL();
+                } else {
+                    INC_DE();
+                }
+            }
+            expr.returnRegister = expr.outputRegister;
+        } else if (num2 > 0x1000000 - 5) {
+            for (a = 0; a < -num2; a++) {
+                if (expr.outputRegister == REGISTER_HL) {
+                    DEC_HL();
+                } else {
+                    DEC_DE();
+                }
+            }
+            expr.returnRegister = expr.outputRegister;
+        } else {
+            if (expr.outputRegister == REGISTER_HL) {
+                LD_DE_IMM(num2);
+            } else {
+                LD_HL_IMM(num2);
+            }
+            ADD_HL_DE();
+        }
+    }
 }
 
 void OperatorAddChainAnsFloat(void) {
+    float num = operand2.num;
+    
+    if (!isFloat1) {
+        PUSH_HL();
+        POP_BC();
+        CALL(__ultof);
+    }
+    
+    LD_HL_IMM(get3ByteOfFloat(num));
+    LD_E(getLastByteOfFloat(num));
 }
 
 void OperatorAddChainAnsVariable(void) {
+    uint8_t offset2 = prescan.variables[operand2.var].offset;
+    
+    if (isFloat1) {
+        if (isFloat2) {
+            LD_E_HL_IND_IX_OFF(offset2);
+        } else {
+            FloatAnsToEUHL();
+            LD_BC_IND_IX_OFF(offset2);
+            CALL(__ultof);
+        }
+    } else {
+        if (isFloat2) {
+            AnsToBC();
+            CALL(__ultof);
+            LD_E_HL_IND_IX_OFF(offset2);
+        } else {
+            if (expr.outputRegister == REGISTER_DE) {
+                LD_HL_IND_IX_OFF(offset2);
+            } else {
+                LD_DE_IND_IX_OFF(offset2);
+            }
+            ADD_HL_DE();
+        }
+    }
+}
+
+void OperatorAddVariableInt(void) {
+    if (isFloat1) {
+        LD_A_BC_IND_IX_OFF(prescan.variables[operand1.var].offset);
+    } else {
+        LD_HL_IND_IX_OFF(operand2.var);
+    }
+    OperatorAddChainAnsInt();
+}
+
+void OperatorAddVariableFloat(void) {
+    uint8_t offset = prescan.variables[operand1.var].offset;
+    
+    if (isFloat1) {
+        LD_A_BC_IND_IX_OFF(offset);
+    } else {
+        LD_BC_IND_IX_OFF(offset);
+        CALL(__ultof);
+        isFloat1 = true;
+    }
+    OperatorAddChainAnsFloat();
+}
+
+void OperatorAddVariableVariable(void) {
+    uint8_t offset1 = prescan.variables[operand1.var].offset;
+    uint8_t offset2 = prescan.variables[operand2.var].offset;
+    
+    if (isFloat1) {
+        if (isFloat2) {
+            LD_A_BC_IND_IX_OFF(offset1);
+            OperatorAddChainAnsVariable();
+        } else {
+            LD_BC_IND_IX_OFF(offset2);
+            CALL(__ultof);
+            LD_E_HL_IND_IX_OFF(offset1);
+        }
+    } else {
+        if (isFloat2) {
+            OperatorsSwap();
+            OperatorAddVariableVariable();
+        } else {
+            LD_HL_IND_IX_OFF(offset1);
+            OperatorAddChainAnsVariable();
+        }
+    }
 }
 
 void OperatorAddChainPushChainAns(void) {
+    if (isFloat1) {
+        if (isFloat2) {
+            POP_HL();
+            POP_DE();
+        } else {
+            AnsToBC();
+            CALL(__ultof);
+            POP_HL();
+            POP_DE();
+        }
+    } else {
+        if (isFloat2) {
+            FloatAnsToEUHL();
+            POP_BC();
+            CALL(__ultof);
+        } else {
+            if (expr.outputRegister == REGISTER_DE) {
+                POP_HL();
+            } else {
+                POP_DE();
+            }
+            ADD_HL_DE();
+        }
+    }
 }
+
 
 void OperatorSubIntVariable(void) {
 }

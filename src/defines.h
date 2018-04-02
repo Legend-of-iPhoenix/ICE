@@ -19,18 +19,20 @@ typedef struct function {
     uint8_t amountOfArgs;
     uint8_t mask;
 } func_t;
+
+typedef union {
+    func_t func;
+    op_t op;
+    vari_t var;
+    num_t num;
+    type_t ansType;
+} operand_t;
  
 typedef struct {
     bool needRelocate;
     bool allowStoreTo;
     uint8_t type;
-    union operand {
-        func_t func;
-        op_t op;
-        vari_t var;
-        num_t num;
-        type_t ansType;
-    } operand;
+    operand_t operand;
 } element_t;
 
 #ifdef __EMSCRIPTEN__

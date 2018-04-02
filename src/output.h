@@ -4,124 +4,132 @@
 #include "defines.h"
 #include "main.h"
 
-#define PRGM_START        0xD1A882
-#define flags             0xD00080
-#define curRow            0xD00595
-#define curCol            0xD00596
-#define OP1               0xD005F8
-#define pixelShadow       0xD031F6
-#define mpBlLevel         0xF60024
+#define PRGM_START      0xD1A882
+#define flags           0xD00080
+#define curRow          0xD00595
+#define curCol          0xD00596
+#define OP1             0xD005F8
+#define pixelShadow     0xD031F6
+#define mpBlLevel       0xF60024
 
-#define _GetCSC           0x02014C
-#define _Mov9ToOP1        0x020320
-#define _PutS             0x0207C0
-#define _NewLine          0x0207F0
-#define _ClrLCDFull       0x020808
-#define _HomeUp           0x020828
-#define _RunIndicOff      0x020848
-#define _ParseInp         0x020F00
-#define _RclAns           0x020F50
-#define _ConvOP1          0x020F70
-#define _DrawStatusBar    0x021A3C
-#define _os_GetCSC        0x021D3C
-#define _SetHLUTo0        0x021D8C
-#define _DispHL           0x021EE0
+#define _GetCSC         0x02014C
+#define _Mov9ToOP1      0x020320
+#define _PutS           0x0207C0
+#define _NewLine        0x0207F0
+#define _ClrLCDFull     0x020808
+#define _HomeUp         0x020828
+#define _RunIndicOff    0x020848
+#define _ParseInp       0x020F00
+#define _RclAns         0x020F50
+#define _ConvOP1        0x020F70
+#define _DrawStatusBar  0x021A3C
+#define _os_GetCSC      0x021D3C
+#define _SetHLUTo0      0x021D8C
+#define _DispHL         0x021EE0
 
-#define __strcat          0x0000C0
-#define __strcpy          0x0000CC
-#define __strlen          0x0000D4
-#define __iand            0x000134
-#define __idvrmu          0x000144
-#define __imul_b          0x000150
-#define __imuls           0x000154
-#define __ineg            0x000160
-#define __ior             0x000168
-#define __ixor            0x000198
+#define __strcat        0x0000C0
+#define __strcpy        0x0000CC
+#define __strlen        0x0000D4
+#define __iand          0x000134
+#define __idvrmu        0x000144
+#define __imul_b        0x000150
+#define __imuls         0x000154
+#define __ineg          0x000160
+#define __ior           0x000168
+#define __ixor          0x000198
+#define __fadd          0x000270
+#define __fcmp          0x000274
+#define __fdiv          0x000278
+#define __ultof         0x000280
+#define __fmul          0x000288
+#define __fneg          0x00028C
+#define __fsub          0x000290
 
-#define OP_LD_BC      0x01
-#define OP_LD_B       0x06
-#define OP_LD_C       0x0E
-#define OP_DJNZ       0x10
-#define OP_LD_DE      0x11
-#define OP_INC_DE     0x13
-#define OP_INC_D      0x14
-#define OP_DEC_D      0x15
-#define OP_LD_D       0x16
-#define OP_JR         0x18
-#define OP_ADD_HL_DE  0x19
-#define OP_LD_A_DE    0x1A
-#define OP_DEC_DE     0x1B
-#define OP_LD_E       0x1E
-#define OP_JR_NZ      0x20
-#define OP_LD_HL      0x21
-#define OP_INC_HL     0x23
-#define OP_INC_H      0x24
-#define OP_DEC_H      0x25
-#define OP_LD_H       0x26
-#define OP_JR_Z       0x28
-#define OP_ADD_HL_HL  0x29
-#define OP_LD_HL_IND  0x2A
-#define OP_DEC_HL     0x2B
-#define OP_LD_L       0x2E
-#define OP_JR_NC      0x30
-#define OP_LD_IMM_A   0x32
-#define OP_SCF        0x37
-#define OP_JR_C       0x38
-#define OP_INC_A      0x3C
-#define OP_DEC_A      0x3D
-#define OP_LD_A       0x3E
-#define OP_CCF        0x3F
-#define OP_LD_B_A     0x47
-#define OP_LD_C_A     0x4F
-#define OP_LD_D_A     0x57
-#define OP_LD_E_A     0x5F
-#define OP_LD_H_A     0x67
-#define OP_LD_L_A     0x6F
-#define OP_LD_HL_D    0x72
-#define OP_LD_HL_E    0x73
-#define OP_LD_HL_A    0x77
-#define OP_LD_A_B     0x78
-#define OP_LD_A_D     0x7A
-#define OP_LD_A_E     0x7B
-#define OP_LD_A_L     0x7D
-#define OP_LD_A_HL    0x7E
-#define OP_ADD_A_L    0x85
-#define OP_ADD_A_A    0x87
-#define OP_ADC_A_H    0x8C
-#define OP_SUB_A_D    0x92
-#define OP_SUB_A_L    0x95
-#define OP_SBC_A_A    0x9F
-#define OP_AND_A_L    0xA5
-#define OP_XOR_A_L    0xAD
-#define OP_XOR_A_A    0xAF
-#define OP_OR_A_C     0xB1
-#define OP_OR_A_D     0xB2
-#define OP_OR_A_A     0xB7
-#define OP_RET_NZ     0xC0
-#define OP_POP_BC     0xC1
-#define OP_JP_NZ      0xC2
-#define OP_JP         0xC3
-#define OP_PUSH_BC    0xC5
-#define OP_ADD_A      0xC6
-#define OP_RET_Z      0xC8
-#define OP_RET        0xC9
-#define OP_CALL       0xCD
-#define OP_JP_Z       0xCA
-#define OP_RET_NC     0xD0
-#define OP_POP_DE     0xD1
-#define OP_JP_NC      0xD2
-#define OP_PUSH_DE    0xD5
-#define OP_SUB_A      0xD6
-#define OP_RET_C      0xD8
-#define OP_JP_C       0xDA
-#define OP_POP_HL     0xE1
-#define OP_EX_SP_HL   0xE3
-#define OP_PUSH_HL    0xE5
-#define OP_AND_A      0xE6
-#define OP_EX_DE_HL   0xEB
-#define OP_XOR_A      0xEE
-#define OP_OR_A       0xF6
-#define OP_CP_A       0xFE
+#define OP_LD_BC        0x01
+#define OP_LD_B         0x06
+#define OP_LD_C         0x0E
+#define OP_DJNZ         0x10
+#define OP_LD_DE        0x11
+#define OP_INC_DE       0x13
+#define OP_INC_D        0x14
+#define OP_DEC_D        0x15
+#define OP_LD_D         0x16
+#define OP_JR           0x18
+#define OP_ADD_HL_DE    0x19
+#define OP_LD_A_DE      0x1A
+#define OP_DEC_DE       0x1B
+#define OP_LD_E         0x1E
+#define OP_JR_NZ        0x20
+#define OP_LD_HL        0x21
+#define OP_INC_HL       0x23
+#define OP_INC_H        0x24
+#define OP_DEC_H        0x25
+#define OP_LD_H         0x26
+#define OP_JR_Z         0x28
+#define OP_ADD_HL_HL    0x29
+#define OP_LD_HL_IND    0x2A
+#define OP_DEC_HL       0x2B
+#define OP_LD_L         0x2E
+#define OP_JR_NC        0x30
+#define OP_LD_IMM_A     0x32
+#define OP_SCF          0x37
+#define OP_JR_C         0x38
+#define OP_INC_A        0x3C
+#define OP_DEC_A        0x3D
+#define OP_LD_A         0x3E
+#define OP_CCF          0x3F
+#define OP_LD_B_A       0x47
+#define OP_LD_C_A       0x4F
+#define OP_LD_D_A       0x57
+#define OP_LD_E_A       0x5F
+#define OP_LD_H_A       0x67
+#define OP_LD_L_A       0x6F
+#define OP_LD_HL_D      0x72
+#define OP_LD_HL_E      0x73
+#define OP_LD_HL_A      0x77
+#define OP_LD_A_B       0x78
+#define OP_LD_A_D       0x7A
+#define OP_LD_A_E       0x7B
+#define OP_LD_A_L       0x7D
+#define OP_LD_A_HL      0x7E
+#define OP_ADD_A_L      0x85
+#define OP_ADD_A_A      0x87
+#define OP_ADC_A_H      0x8C
+#define OP_SUB_A_D      0x92
+#define OP_SUB_A_L      0x95
+#define OP_SBC_A_A      0x9F
+#define OP_AND_A_L      0xA5
+#define OP_XOR_A_L      0xAD
+#define OP_XOR_A_A      0xAF
+#define OP_OR_A_C       0xB1
+#define OP_OR_A_D       0xB2
+#define OP_OR_A_A       0xB7
+#define OP_RET_NZ       0xC0
+#define OP_POP_BC       0xC1
+#define OP_JP_NZ        0xC2
+#define OP_JP           0xC3
+#define OP_PUSH_BC      0xC5
+#define OP_ADD_A        0xC6
+#define OP_RET_Z        0xC8
+#define OP_RET          0xC9
+#define OP_CALL         0xCD
+#define OP_JP_Z         0xCA
+#define OP_RET_NC       0xD0
+#define OP_POP_DE       0xD1
+#define OP_JP_NC        0xD2
+#define OP_PUSH_DE      0xD5
+#define OP_SUB_A        0xD6
+#define OP_RET_C        0xD8
+#define OP_JP_C         0xDA
+#define OP_POP_HL       0xE1
+#define OP_EX_SP_HL     0xE3
+#define OP_PUSH_HL      0xE5
+#define OP_AND_A        0xE6
+#define OP_EX_DE_HL     0xEB
+#define OP_XOR_A        0xEE
+#define OP_PUSH_AF      0xF5
+#define OP_OR_A         0xF6
+#define OP_CP_A         0xFE
 
 #ifdef CALCULATOR
 #define output(type, value) \
@@ -175,6 +183,7 @@
 #define LD_A(val)             do { output(uint16_t, val * 256 + OP_LD_A); reg.AIsNumber = true; reg.AIsVariable = false; reg.AValue = val; } while (0)
 #define LD_B(val)             do { output(uint8_t, OP_LD_B); output(uint8_t, val); ResetReg(REGISTER_BC); } while (0)
 #define LD_C(val)             do { output(uint8_t, OP_LD_C); output(uint8_t, val); ResetReg(REGISTER_BC); } while (0)
+#define LD_E(val)             do { output(uint8_t, OP_LD_E); output(uint8_t, val); ResetReg(REGISTER_BC); } while (0)
 #define LD_H(val)             do { output(uint8_t, OP_LD_H); output(uint8_t, val); ResetReg(REGISTER_HL); } while (0)
 #define LD_L(val)             do { output(uint8_t, OP_LD_L); output(uint8_t, val); ResetReg(REGISTER_HL); } while (0)
 #define LD_HL_A()             do { output(uint8_t, OP_LD_HL_A); } while (0)
@@ -211,6 +220,7 @@
 #define OR_A_SBC_HL_DE()      do { output(uint24_t, 0x52EDB7); ResetReg(REGISTER_HL); } while (0)
 #define SBC_HL_HL_INC_HL()    do { output(uint24_t, 0x2362ED); ResetReg(REGISTER_HL); } while (0)
 
+#define PUSH_AF()             do { output(uint8_t, OP_PUSH_AF); } while (0)
 #define PUSH_BC()             do { output(uint8_t, OP_PUSH_BC); } while (0)
 #define PUSH_DE()             do { output(uint8_t, OP_PUSH_DE); } while (0)
 #define PUSH_HL()             do { output(uint8_t, OP_PUSH_HL); } while (0)

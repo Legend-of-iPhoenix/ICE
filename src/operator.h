@@ -6,7 +6,8 @@ enum {
     REGISTER_DE,
     REGISTER_BC,
     REGISTER_HL_DE,
-    REGISTER_A
+    REGISTER_A,
+    REGISTER_AUBC
 };
 
 extern const uint8_t operatorPrecedence[17];

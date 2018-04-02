@@ -10,6 +10,7 @@
 #include "routines.h"
 #include "prescan.h"
 
+bool isFloatExpression;
 static bool inExpression = false;
 static bool inFunction = false;
 static bool canUseMask = true;
@@ -92,7 +93,7 @@ uint8_t ParseUntilEnd(void) {
 }
 
 uint8_t ParseNumber(uint8_t tok) {
-    char input[100]= {0};
+    char input[100] = {0};
     uint8_t a = 1, amountOfPts = 0;
     element_t newElement = {0};
     
@@ -100,14 +101,16 @@ uint8_t ParseNumber(uint8_t tok) {
     canUseMask = false;
     
     // Fetch number
-    input[0] = tok;
+    input[0] = (tok == tChs ? 0x2D : tok);
     while ((((tok = _getc()) >= t0 && tok <= t9) || tok == tDecPt) && a < 100) {
         if (tok == tDecPt) {
             amountOfPts++;
         }
-        input[a++] = tok;
+        input[a++] = (tok == tDecPt ? 0x2E : tok);
     }
-    SeekMinus1();
+    if (tok != 0xFF) {
+        SeekMinus1();
+    }
     
     // Only 1 decimal point is allowed
     if (amountOfPts > 1) {
@@ -133,7 +136,9 @@ uint8_t ParseEE(uint8_t tok) {
     while ((tok = IsHexadecimal(token = _getc())) != 16) {
         output = (output << 4) + tok;
     }
-    SeekMinus1();
+    if (tok != 0xFF) {
+        SeekMinus1();
+    }
     
     // Push to the stack
     newElement.type = TYPE_INT;
@@ -154,7 +159,9 @@ uint8_t ParsePi(uint8_t tok) {
     while ((tok = (token = _getc())) >= t0 && tok <= t1) {
         output = (output << 1) + tok - t0;
     }
-    SeekMinus1();
+    if (tok != 0xFF) {
+        SeekMinus1();
+    }
     
     // Push to the stack
     newElement.type = TYPE_INT;
@@ -399,17 +406,19 @@ uint8_t ParseFunction(uint8_t tok) {
 }
 
 uint8_t ParseCloseFunction(uint8_t tok) {
+    bool foundFunction = false;
     element_t prevElement = {0};
     
     while (stackElements) {
         prevElement = stackPop();
         if (prevElement.type == TYPE_FUNCTION) {
+            foundFunction = true;
             break;
         }
         outputStackPush(prevElement);
     }
     
-    if (!stackElements) {
+    if (!foundFunction) {
         if (inFunction) {
             ParseExpression();
             returnToken = tok;
@@ -438,7 +447,9 @@ uint8_t ParseCloseFunction(uint8_t tok) {
             }
         } else {
             canUseMask = false;
-            outputStackPush(prevElement);
+            if (openingFunction != tLParen) {
+                outputStackPush(prevElement);
+            }
         }
     }
     
@@ -489,11 +500,15 @@ uint8_t ParseNewLine(uint8_t tok) {
 }
 
 uint8_t ParseExpression(void) {
-    uint24_t index;
+    uint24_t index, ansIndex = -10;
     element_t firstElement;
     
     EntireStackToOutput();
     OptimizeExpression();
+    
+    expr.outputRegister = REGISTER_HL;
+    isFloatExpression = false;
+    memset(&reg, 0, sizeof(reg));
     
     for (index = 1; index < outputElements; index++) {
         uint8_t res;
@@ -505,13 +520,30 @@ uint8_t ParseExpression(void) {
                 return E_SYNTAX;
             }
             
+            // Eventually push Ans
+            if (index > ansIndex + 2) {
+                outputCurr = getOutputElement(ansIndex);
+                outputCurr.type = TYPE_CHAIN_PUSH;
+                setOutputElement(outputCurr, ansIndex);
+                PushAns();
+            }
+            
+            // Compile the operator
             if ((res = compileOperator(index)) != VALID) {
                 return res;
             }
             
+            // Remove the last argument and the operator itself
             removeOutputElement(index);
             removeOutputElement(index - 1);
             index -= 2;
+            
+            // Set Ans type
+            outputCurr = getOutputElement(index);
+            outputCurr.type = TYPE_CHAIN_ANS;
+            outputCurr.operand.ansType = (isFloatExpression ? TYPE_FLOAT : TYPE_INT);
+            setOutputElement(outputCurr, index);
+            ansIndex = index;
         } else if (outputCurr.type == TYPE_FUNCTION) {
             uint8_t functionIndex = outputCurr.operand.func.index;
             uint8_t amountOfArgs = outputCurr.operand.func.amountOfArgs;
@@ -672,7 +704,9 @@ void EntireStackToOutput(void) {
     while (stackElements) {
         element_t stackElement = stackPop();
         
-        outputStackPush(stackElement);
+        if (stackElement.type != TYPE_FUNCTION || stackElement.operand.func.index != 3) {
+            outputStackPush(stackElement);
+        }
     }
 }
 

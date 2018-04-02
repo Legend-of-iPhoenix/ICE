@@ -21,7 +21,7 @@ void preScanProgram(void) {
     int token;
     
     _rewind(ice.inPrgm);
-
+    
     // Scan the entire program
     while ((token = _getc()) != EOF) {
         uint8_t tok = token, tok2 = 0;
