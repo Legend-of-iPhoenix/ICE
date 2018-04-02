@@ -130,12 +130,12 @@ float execOp(uint8_t op, float operand1, float operand2) {
 }
 
 uint8_t compileOperator(uint24_t index) {
-    uint8_t operatorIndex;
+    uint8_t operatorIndex, tempOp;
     
     outputCurr     = getOutputElement(index);
     outputPrev     = getOutputElement(index - 1);
     outputPrevPrev = getOutputElement(index - 2);
-    op             = outputCurr.operand.op.type;
+    tempOp = op    = outputCurr.operand.op.type;
     type1          = outputPrevPrev.type;
     type2          = outputPrev.type;
     isFloat1       = (type1 == TYPE_FLOAT || 
@@ -146,9 +146,21 @@ uint8_t compileOperator(uint24_t index) {
                      ((type2 == TYPE_CHAIN_ANS || type2 == TYPE_CHAIN_PUSH) && outputPrev.operand.ansType == TYPE_FLOAT));
     operand1       = outputPrevPrev.operand;
     operand2       = outputPrev.operand;
-    operatorIndex  = getIndexOfOperator(op);
     
     expr.returnRegister = REGISTER_HL;
+    isFloatExpression = (isFloat1 || isFloat2);
+    
+    // If one of both argument is a float, the code for operator 1 might be the same as operator 2
+    if (isFloatExpression) {
+        if (op == tMul) {
+            tempOp = tAdd;
+        }
+        if (op == tDiv) {
+            tempOp = tSub;
+        }
+    }
+    
+    operatorIndex = getIndexOfOperator(tempOp);
     
     if (type1 == TYPE_CHAIN_PUSH || type2 == TYPE_CHAIN_PUSH) {
         if (type2 != TYPE_CHAIN_ANS) {
@@ -162,7 +174,11 @@ uint8_t compileOperator(uint24_t index) {
             return E_ICE_ERROR;
         }
         
-        if (type1 == TYPE_BYTE || type2 == TYPE_BYTE || (op == tStore && type2 != TYPE_VARIABLE)) {
+        if (type1 == TYPE_BYTE || 
+            type2 == TYPE_BYTE || 
+            (op == tStore && type2 != TYPE_VARIABLE) ||
+            ((op == tDotIcon || op == tCrossIcon || op == tBoxIcon) && (isFloat1 || isFloat2))
+        ) {
             return E_SYNTAX;
         }
         
@@ -172,12 +188,20 @@ uint8_t compileOperator(uint24_t index) {
         
         (*operatorsPointers[operatorIndex * 16 + (type1 - 1) * 4 + type2 - 1])();
         
-        if (op == tAdd && (isFloat1 || isFloat2)) {
-            CALL(__fadd);
+        if (isFloatExpression) {
+            if (op == tMul) {
+                CALL(__fmul);
+            } else if (op == tAdd) {
+                CALL(__fadd);
+            } else if (op == tDiv) {
+                CALL(__fdiv);
+            } else if (op == tSub) {
+                CALL(__fsub);
+            }
         }
     }
     
-    if ((isFloatExpression = (isFloat1 | isFloat2))) {
+    if (isFloatExpression) {
         expr.outputRegister = REGISTER_AUBC;
     } else {
         expr.outputRegister = expr.returnRegister;
@@ -224,16 +248,10 @@ void OperatorStoreChainPushChainAns(void) {
 void OperatorBitAndVariableInt(void) {
 }
 
-void OperatorBitAndVariableFloat(void) {
-}
-
 void OperatorBitAndVariableVariable(void) {
 }
 
 void OperatorBitAndChainAnsInt(void) {
-}
-
-void OperatorBitAndChainAnsFloat(void) {
 }
 
 void OperatorBitAndChainAnsVariable(void) {
@@ -245,16 +263,10 @@ void OperatorBitAndChainPushChainAns(void) {
 void OperatorBitOrVariableInt(void) {
 }
 
-void OperatorBitOrVariableFloat(void) {
-}
-
 void OperatorBitOrVariableVariable(void) {
 }
 
 void OperatorBitOrChainAnsInt(void) {
-}
-
-void OperatorBitOrChainAnsFloat(void) {
 }
 
 void OperatorBitOrChainAnsVariable(void) {
@@ -266,16 +278,10 @@ void OperatorBitOrChainPushChainAns(void) {
 void OperatorBitXorVariableInt(void) {
 }
 
-void OperatorBitXorVariableFloat(void) {
-}
-
 void OperatorBitXorVariableVariable(void) {
 }
 
 void OperatorBitXorChainAnsInt(void) {
-}
-
-void OperatorBitXorChainAnsFloat(void) {
 }
 
 void OperatorBitXorChainAnsVariable(void) {
@@ -520,19 +526,18 @@ void OperatorGEChainPushChainAns(void) {
 #define OperatorNEChainAnsVariable  OperatorEQChainAnsVariable
 #define OperatorNEChainPushChainAns OperatorEQChainPushChainAns
 
-void OperatorMulVariableInt(void) {
-}
+/****************************
+* All these functions use
+* integers as arguments
+****************************/
 
-void OperatorMulVariableFloat(void) {
+void OperatorMulVariableInt(void) {
 }
 
 void OperatorMulVariableVariable(void) {
 }
 
 void OperatorMulChainAnsInt(void) {
-}
-
-void OperatorMulChainAnsFloat(void) {
 }
 
 void OperatorMulChainAnsVariable(void) {
@@ -547,16 +552,7 @@ void OperatorDivIntVariable(void) {
 void OperatorDivIntChainAns(void) {
 }
 
-void OperatorDivFloatVariable(void) {
-}
-
-void OperatorDivFloatChainAns(void) {
-}
-
 void OperatorDivVariableInt(void) {
-}
-
-void OperatorDivVariableFloat(void) {
 }
 
 void OperatorDivVariableVariable(void) {
@@ -566,9 +562,6 @@ void OperatorDivVariableChainAns(void) {
 }
 
 void OperatorDivChainAnsInt(void) {
-}
-
-void OperatorDivChainAnsFloat(void) {
 }
 
 void OperatorDivChainAnsVariable(void) {
@@ -620,8 +613,7 @@ void OperatorAddChainAnsFloat(void) {
     float num = operand2.num;
     
     if (!isFloat1) {
-        PUSH_HL();
-        POP_BC();
+        AnsToBC();
         CALL(__ultof);
     }
     
@@ -704,15 +696,12 @@ void OperatorAddVariableVariable(void) {
 
 void OperatorAddChainPushChainAns(void) {
     if (isFloat1) {
-        if (isFloat2) {
-            POP_HL();
-            POP_DE();
-        } else {
+        if (!isFloat2) {
             AnsToBC();
             CALL(__ultof);
-            POP_HL();
-            POP_DE();
         }
+        POP_HL();
+        POP_DE();
     } else {
         if (isFloat2) {
             FloatAnsToEUHL();
@@ -793,11 +782,11 @@ void (*operatorsPointers[272])(void) = {
     OperatorError,
     OperatorError,
     OperatorBitAndVariableInt,
-    OperatorBitAndVariableFloat,
+    OperatorError,
     OperatorBitAndVariableVariable,
     OperatorError,
     OperatorBitAndChainAnsInt,
-    OperatorBitAndChainAnsFloat,
+    OperatorError,
     OperatorBitAndChainAnsVariable,
     OperatorError,
     
@@ -810,11 +799,11 @@ void (*operatorsPointers[272])(void) = {
     OperatorError,
     OperatorError,
     OperatorBitOrVariableInt,
-    OperatorBitOrVariableFloat,
+    OperatorError,
     OperatorBitOrVariableVariable,
     OperatorError,
     OperatorBitOrChainAnsInt,
-    OperatorBitOrChainAnsFloat,
+    OperatorError,
     OperatorBitOrChainAnsVariable,
     OperatorError,
     
@@ -827,11 +816,11 @@ void (*operatorsPointers[272])(void) = {
     OperatorError,
     OperatorError,
     OperatorBitXorVariableInt,
-    OperatorBitXorVariableFloat,
+    OperatorError,
     OperatorBitXorVariableVariable,
     OperatorError,
     OperatorBitXorChainAnsInt,
-    OperatorBitXorChainAnsFloat,
+    OperatorError,
     OperatorBitXorChainAnsVariable,
     OperatorError,
     
@@ -997,11 +986,11 @@ void (*operatorsPointers[272])(void) = {
     OperatorError,
     OperatorError,
     OperatorMulVariableInt,
-    OperatorMulVariableFloat,
+    OperatorError,
     OperatorMulVariableVariable,
     OperatorError,
     OperatorMulChainAnsInt,
-    OperatorMulChainAnsFloat,
+    OperatorError,
     OperatorMulChainAnsVariable,
     OperatorError,
     
@@ -1011,14 +1000,14 @@ void (*operatorsPointers[272])(void) = {
     OperatorDivIntChainAns,
     OperatorError,
     OperatorError,
-    OperatorDivFloatVariable,
-    OperatorDivFloatChainAns,
+    OperatorError,
+    OperatorError,
     OperatorDivVariableInt,
-    OperatorDivVariableFloat,
+    OperatorError,
     OperatorDivVariableVariable,
     OperatorDivVariableChainAns,
     OperatorDivChainAnsInt,
-    OperatorDivChainAnsFloat,
+    OperatorError,
     OperatorDivChainAnsVariable,
     OperatorError,
     
