@@ -130,12 +130,12 @@ float execOp(uint8_t op, float operand1, float operand2) {
 }
 
 uint8_t compileOperator(uint24_t index) {
-    uint8_t operatorIndex, tempOp;
+    uint8_t operatorIndex;
     
     outputCurr     = getOutputElement(index);
     outputPrev     = getOutputElement(index - 1);
     outputPrevPrev = getOutputElement(index - 2);
-    tempOp = op    = outputCurr.operand.op.type;
+    op             = outputCurr.operand.op.type;
     type1          = outputPrevPrev.type;
     type2          = outputPrev.type;
     isFloat1       = (type1 == TYPE_FLOAT || 
@@ -150,34 +150,46 @@ uint8_t compileOperator(uint24_t index) {
     expr.returnRegister = REGISTER_HL;
     isFloatExpression = (isFloat1 || isFloat2);
     
-    // If one of both argument is a float, the code for operator 1 might be the same as operator 2
-    if (isFloatExpression) {
-        if (op == tMul) {
-            tempOp = tAdd;
-        }
-        if (op == tDiv) {
-            tempOp = tSub;
-        }
+    operatorIndex = getIndexOfOperator(op);
+    
+    if ((type1 == TYPE_CHAIN_PUSH || type2 == TYPE_CHAIN_PUSH) && type2 != TYPE_CHAIN_ANS) {
+        return E_ICE_ERROR;
     }
     
-    operatorIndex = getIndexOfOperator(tempOp);
-    
-    if (type1 == TYPE_CHAIN_PUSH || type2 == TYPE_CHAIN_PUSH) {
-        if (type2 != TYPE_CHAIN_ANS) {
-            return E_ICE_ERROR;
+    // One of the arguments is a float
+    if (isFloatExpression) {
+        if (type1 == TYPE_CHAIN_PUSH) {
+            // Convert the previous Ans and current Ans to floats
+            OperatorFloatChainPushChainAns();
+        } else {
+            // Convert both arguments to floats
+            (*operatorsFloatPointers[(type1 - 1) * 4 + type2 - 1])();
         }
         
-        // Call the right CHAIN_PUSH | CHAIN_ANS function
+        // Call the right code to finish the floats
+        if (op == tMul) {
+            CALL(__fmul);
+        } else if (op == tAdd) {
+            CALL(__fadd);
+        } else if (op == tDiv) {
+            CALL(__fdiv);
+        } else if (op == tSub) {
+            CALL(__fsub);
+        }
+    }
+        
+    // It was a CHAIN_PUSH | CHAIN_ANS
+    else if (type1 == TYPE_CHAIN_PUSH) {
+        // Call the right routine
         (*operatorsChainPushPointers[operatorIndex])();
-    } else {
-        if (type1 == type2 && (type1 <= TYPE_FLOAT || type1 == TYPE_CHAIN_ANS)) {
-            return E_ICE_ERROR;
-        }
-        
+    }
+    
+    // Both arguments are integers
+    else {
         if (type1 == TYPE_BYTE || 
             type2 == TYPE_BYTE || 
             (op == tStore && type2 != TYPE_VARIABLE) ||
-            ((op == tDotIcon || op == tCrossIcon || op == tBoxIcon) && (isFloat1 || isFloat2))
+            (isFloatExpression && (op == tDotIcon || op == tCrossIcon || op == tBoxIcon))
         ) {
             return E_SYNTAX;
         }
@@ -187,18 +199,6 @@ uint8_t compileOperator(uint24_t index) {
         }
         
         (*operatorsPointers[operatorIndex * 16 + (type1 - 1) * 4 + type2 - 1])();
-        
-        if (isFloatExpression) {
-            if (op == tMul) {
-                CALL(__fmul);
-            } else if (op == tAdd) {
-                CALL(__fadd);
-            } else if (op == tDiv) {
-                CALL(__fdiv);
-            } else if (op == tSub) {
-                CALL(__fsub);
-            }
-        }
     }
     
     if (isFloatExpression) {
@@ -242,9 +242,6 @@ void OperatorStoreVariableVariable(void) {
 void OperatorStoreChainAnsVariable(void) {
 }
 
-void OperatorStoreChainPushChainAns(void) {
-}
-
 void OperatorBitAndVariableInt(void) {
 }
 
@@ -255,9 +252,6 @@ void OperatorBitAndChainAnsInt(void) {
 }
 
 void OperatorBitAndChainAnsVariable(void) {
-}
-
-void OperatorBitAndChainPushChainAns(void) {
 }
 
 void OperatorBitOrVariableInt(void) {
@@ -272,9 +266,6 @@ void OperatorBitOrChainAnsInt(void) {
 void OperatorBitOrChainAnsVariable(void) {
 }
 
-void OperatorBitOrChainPushChainAns(void) {
-}
-
 void OperatorBitXorVariableInt(void) {
 }
 
@@ -285,9 +276,6 @@ void OperatorBitXorChainAnsInt(void) {
 }
 
 void OperatorBitXorChainAnsVariable(void) {
-}
-
-void OperatorBitXorChainPushChainAns(void) {
 }
 
 void OperatorAndVariableInt(void) {
@@ -308,9 +296,6 @@ void OperatorAndChainAnsFloat(void) {
 void OperatorAndChainAnsVariable(void) {
 }
 
-void OperatorAndChainPushChainAns(void) {
-}
-
 void OperatorXorVariableInt(void) {
 }
 
@@ -327,9 +312,6 @@ void OperatorXorChainAnsFloat(void) {
 }
 
 void OperatorXorChainAnsVariable(void) {
-}
-
-void OperatorXorChainPushChainAns(void) {
 }
 
 void OperatorOrVariableInt(void) {
@@ -350,9 +332,6 @@ void OperatorOrChainAnsFloat(void) {
 void OperatorOrChainAnsVariable(void) {
 }
 
-void OperatorOrChainPushChainAns(void) {
-}
-
 void OperatorEQVariableInt(void) {
 }
 
@@ -369,9 +348,6 @@ void OperatorEQChainAnsFloat(void) {
 }
 
 void OperatorEQChainAnsVariable(void) {
-}
-
-void OperatorEQChainPushChainAns(void) {
 }
 
 void OperatorLTIntVariable(void) {
@@ -407,9 +383,6 @@ void OperatorLTChainAnsFloat(void) {
 void OperatorLTChainAnsVariable(void) {
 }
 
-void OperatorLTChainPushChainAns(void) {
-}
-
 void OperatorGTIntVariable(void) {
 }
 
@@ -441,9 +414,6 @@ void OperatorGTChainAnsFloat(void) {
 }
 
 void OperatorGTChainAnsVariable(void) {
-}
-
-void OperatorGTChainPushChainAns(void) {
 }
 
 void OperatorLEIntVariable(void) {
@@ -479,9 +449,6 @@ void OperatorLEChainAnsFloat(void) {
 void OperatorLEChainAnsVariable(void) {
 }
 
-void OperatorLEChainPushChainAns(void) {
-}
-
 void OperatorGEIntVariable(void) {
 }
 
@@ -515,16 +482,12 @@ void OperatorGEChainAnsFloat(void) {
 void OperatorGEChainAnsVariable(void) {
 }
 
-void OperatorGEChainPushChainAns(void) {
-}
-
 #define OperatorNEVariableInt       OperatorEQVariableInt
 #define OperatorNEVariableFloat     OperatorEQVariableFloat
 #define OperatorNEVariableVariable  OperatorEQVariableVariable
 #define OperatorNEChainAnsInt       OperatorEQChainAnsInt
 #define OperatorNEChainAnsFloat     OperatorEQChainAnsFloat
 #define OperatorNEChainAnsVariable  OperatorEQChainAnsVariable
-#define OperatorNEChainPushChainAns OperatorEQChainPushChainAns
 
 /****************************
 * All these functions use
@@ -541,9 +504,6 @@ void OperatorMulChainAnsInt(void) {
 }
 
 void OperatorMulChainAnsVariable(void) {
-}
-
-void OperatorMulChainPushChainAns(void) {
 }
 
 void OperatorDivIntVariable(void) {
@@ -565,9 +525,6 @@ void OperatorDivChainAnsInt(void) {
 }
 
 void OperatorDivChainAnsVariable(void) {
-}
-
-void OperatorDivChainPushChainAns(void) {
 }
 
 void OperatorAddChainAnsInt(void) {
@@ -750,9 +707,6 @@ void OperatorSubChainAnsFloat(void) {
 }
 
 void OperatorSubChainAnsVariable(void) {
-}
-
-void OperatorSubChainPushChainAns(void) {
 }
 
 void (*operatorsPointers[272])(void) = {
@@ -1046,6 +1000,89 @@ void (*operatorsPointers[272])(void) = {
     OperatorError
 };
 
+void OperatorBitAndChainPushChainAns(void) {
+}
+
+void OperatorBitOrChainPushChainAns(void) {
+}
+
+void OperatorBitXorChainPushChainAns(void) {
+}
+
+void OperatorAndChainPushChainAns(void) {
+}
+
+void OperatorXorChainPushChainAns(void) {
+}
+
+void OperatorOrChainPushChainAns(void) {
+}
+
+void OperatorEQChainPushChainAns(void) {
+    MaybeAToHL();
+    if (expr.outputRegister == REGISTER_DE) {
+        POP_HL();
+    } else {
+        POP_DE();
+    }
+    OR_A_SBC_HL_DE();
+    output(uint8_t, OP_LD_HL);
+    output(uint24_t, 0);
+    if (op == tEQ) {
+        JR_NZ(1);
+    } else {
+        JR_Z(1);
+    }
+    INC_HL();
+}
+
+void OperatorLTChainPushChainAns(void) {
+    if (op == tLT || op == tLE) {
+        AnsToHL();
+        POP_DE();
+        SCF();
+    } else {
+        AnsToDE();
+        POP_HL();
+        OR_A_A();
+    }
+    SBC_HL_DE();
+    SBC_HL_HL_INC_HL();
+}
+
+#define OperatorGTChainPushChainAns OperatorLTChainPushChainAns
+#define OperatorLEChainPushChainAns OperatorLTChainPushChainAns
+#define OperatorGEChainPushChainAns OperatorLTChainPushChainAns
+#define OperatorNEChainPushChainAns OperatorEQChainPushChainAns
+
+void OperatorMulChainPushChainAns(void) {
+    AnsToHL();
+    POP_BC();
+    CALL(__imuls);
+}
+
+void OperatorDivChainPushChainAns(void) {
+    AnsToBC();
+    POP_HL();
+    CALL(__idvrmu);
+}
+
+void OperatorAddChainPushChainAns(void) {
+    MaybeAToHL();
+    if (expr.outputRegister == REGISTER_DE) {
+        POP_HL();
+    } else {
+        POP_DE();
+    }
+    ADD_HL_DE();
+}
+
+void OperatorSubChainPushChainAns(void) {
+    AnsToDE();
+    POP_HL();
+    OR_A_SBC_HL_DE();
+}
+
 void (*operatorsChainPushPointers[17])(void) = {
     OperatorError,
     OperatorBitAndChainPushChainAns,
@@ -1064,4 +1101,59 @@ void (*operatorsChainPushPointers[17])(void) = {
     OperatorDivChainPushChainAns,
     OperatorAddChainPushChainAns,
     OperatorSubChainPushChainAns
+};
+
+void OperatorFloatIntVariable(void) {
+}
+
+void OperatorFloatIntChainAns(void) {
+}
+
+void OperatorFloatFloatVariable(void) {
+}
+
+void OperatorFloatFloatChainAns(void) {
+}
+
+void OperatorFloatVariableInt(void) {
+}
+
+void OperatorFloatVariableFloat(void) {
+}
+
+void OperatorFloatVariableVariable(void) {
+}
+
+void OperatorFloatVariableChainAns(void) {
+}
+
+void OperatorFloatChainAnsInt(void) {
+}
+
+void OperatorFloatChainAnsFloat(void) {
+}
+
+void OperatorFloatChainAnsVariable(void) {
+}
+
+void OperatorFloatChainPushChainAns(void) {
+}
+
+void (*operatorsFloatPointers[16])(void) = {
+    OperatorError,
+    OperatorError,
+    OperatorFloatIntVariable,
+    OperatorFloatIntChainAns,
+    OperatorError,
+    OperatorError,
+    OperatorFloatFloatVariable,
+    OperatorFloatFloatChainAns,
+    OperatorFloatVariableInt,
+    OperatorFloatVariableFloat,
+    OperatorFloatVariableVariable,
+    OperatorFloatVariableChainAns,
+    OperatorFloatChainAnsInt,
+    OperatorFloatChainAnsFloat,
+    OperatorFloatChainAnsVariable,
+    OperatorError
 };
