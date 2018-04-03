@@ -526,25 +526,67 @@ void OperatorAddVariableVariable(void) {
     OperatorAddChainAnsVariable(void);
 }
 
-void OperatorSubIntVariable(void) {
-}
-
-void OperatorSubIntChainAns(void) {
-}
-
-void OperatorSubVariableInt(void) {
-}
-
-void OperatorSubVariableVariable(void) {
-}
-
-void OperatorSubVariableChainAns(void) {
-}
-
 void OperatorSubChainAnsInt(void) {
+    uint8_t a;
+    uint24_t num = operand2.num;
+    
+    if (num < 5) {
+        for (a = 0; a < num; a++) {
+            if (expr.outputRegister == REGISTER_HL) {
+                DEC_HL();
+            } else {
+                DEC_DE();
+            }
+        }
+        expr.returnRegister = expr.outputRegister;
+    } else if (num > 0x1000000 - 5) {
+        for (a = 0; a < -num; a++) {
+            if (expr.outputRegister == REGISTER_HL) {
+                INC_HL();
+            } else {
+                INC_DE();
+            }
+        }
+        expr.returnRegister = expr.outputRegister;
+    } else {
+        AnsToHL();
+        LD_DE_IMM(num2);
+        OR_A_SBC_HL_DE();
+    }
 }
 
 void OperatorSubChainAnsVariable(void) {
+    AnsToHL();
+    LD_DE_IND_IX_OFF(prescan.variables[operand2.var].offset);
+    OR_A_SBC_HL_DE();
+}
+
+void OperatorSubIntVariable(void) {
+    LD_HL_IMM(operand1.num);
+    OperatorSubChainAnsVariable(void) {
+    }
+}
+
+void OperatorSubIntChainAns(void) {
+    AnsToDE();
+    LD_HL_IMM(operand1.num);
+    OR_A_SBC_HL_DE();
+}
+
+void OperatorSubVariableInt(void) {
+    LD_HL_IND_IX_OFF(prescan.variables[operand1.var].offset);
+    OperatorSubChainAnsInt();
+}
+
+void OperatorSubVariableVariable(void) {
+    LD_HL_IND_IX_OFF(prescan.variables[operand1.var].offset);
+    OperatorSubChainAnsVariable();
+}
+
+void OperatorSubVariableChainAns(void) {
+    AnsToDE();
+    LD_HL_IND_IX_OFF(prescan.variables[operand1.var].offset);
+    OR_A_SBC_HL_DE();
 }
 
 void (*operatorsPointers[272])(void) = {
