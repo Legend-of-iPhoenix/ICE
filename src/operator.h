@@ -12,7 +12,7 @@ enum {
 
 extern const uint8_t operatorPrecedence[17];
 extern const uint8_t operatorPrecedence2[17];
-extern void (*operatorsPointers[272])(void);
+extern void (*operatorsPointers[153])(void);
 extern void (*operatorsChainPushPointers[17])(void);
 extern void (*operatorsFloatPointers[16])(void);
 

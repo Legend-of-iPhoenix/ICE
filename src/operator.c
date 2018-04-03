@@ -187,6 +187,7 @@ uint8_t compileOperator(uint24_t index) {
     
     // Both arguments are integers
     else {
+        // Check valid arguments
         if (type1 == TYPE_BYTE || 
             type2 == TYPE_BYTE || 
             (op == tStore && type2 != TYPE_VARIABLE) ||
@@ -195,11 +196,20 @@ uint8_t compileOperator(uint24_t index) {
             return E_SYNTAX;
         }
         
+        // If we can swap the arguments, we have less possibilities
         if (operatorCanSwap[operatorIndex] && (type1 <= TYPE_FLOAT || type2 == TYPE_CHAIN_ANS)) {
             OperatorsSwap();
         }
         
-        (*operatorsPointers[operatorIndex * 16 + (type1 - 1) * 4 + type2 - 1])();
+        // Arguments are never floats, so filter them out
+        if (type1 > TYPE_FLOAT) {
+            type1--;
+        }
+        if (type2 > TYPE_FLOAT) {
+            type2--;
+        }
+        
+        (*operatorsPointers[operatorIndex * 9 + (type1 - 1) * 3 + type2 - 1])();
         
         if (op == tDiv) {
             CALL(__idvrmu);
@@ -234,6 +244,7 @@ void OperatorsSwap(void) {
 }
 
 void OperatorError(void) {
+    displayError(E_ICE_ERROR);
 }
 
 /****************************
@@ -617,19 +628,12 @@ void OperatorSubVariableChainAns(void) {
     OR_A_SBC_HL_DE();
 }
 
-void (*operatorsPointers[272])(void) = {
-    OperatorError,
+void (*operatorsPointers[153])(void) = {
     OperatorError,
     OperatorStoreIntVariable,
     OperatorError,
     OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
     OperatorStoreVariableVariable,
-    OperatorError,
     OperatorError,
     OperatorError,
     OperatorStoreChainAnsVariable,
@@ -638,272 +642,160 @@ void (*operatorsPointers[272])(void) = {
     OperatorError,
     OperatorError,
     OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
     OperatorBitAndVariableInt,
-    OperatorError,
     OperatorBitAndVariableVariable,
     OperatorError,
     OperatorBitAndChainAnsInt,
-    OperatorError,
     OperatorBitAndChainAnsVariable,
     OperatorError,
     
     OperatorError,
     OperatorError,
     OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
     OperatorBitOrVariableInt,
-    OperatorError,
     OperatorBitOrVariableVariable,
     OperatorError,
     OperatorBitOrChainAnsInt,
-    OperatorError,
     OperatorBitOrChainAnsVariable,
     OperatorError,
     
     OperatorError,
     OperatorError,
     OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
     OperatorBitXorVariableInt,
-    OperatorError,
     OperatorBitXorVariableVariable,
     OperatorError,
     OperatorBitXorChainAnsInt,
-    OperatorError,
     OperatorBitXorChainAnsVariable,
     OperatorError,
     
     OperatorError,
     OperatorError,
     OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
     OperatorAndVariableInt,
-    OperatorError,
     OperatorAndVariableVariable,
     OperatorError,
     OperatorAndChainAnsInt,
-    OperatorError,
     OperatorAndChainAnsVariable,
     OperatorError,
     
     OperatorError,
     OperatorError,
     OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
     OperatorXorVariableInt,
-    OperatorError,
     OperatorXorVariableVariable,
     OperatorError,
     OperatorXorChainAnsInt,
-    OperatorError,
     OperatorXorChainAnsVariable,
     OperatorError,
     
     OperatorError,
     OperatorError,
     OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
     OperatorOrVariableInt,
-    OperatorError,
     OperatorOrVariableVariable,
     OperatorError,
     OperatorOrChainAnsInt,
-    OperatorError,
     OperatorOrChainAnsVariable,
     OperatorError,
     
     OperatorError,
     OperatorError,
     OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
     OperatorEQVariableInt,
-    OperatorError,
     OperatorEQVariableVariable,
     OperatorError,
     OperatorEQChainAnsInt,
-    OperatorError,
     OperatorEQChainAnsVariable,
     OperatorError,
     
     OperatorError,
-    OperatorError,
     OperatorLTIntVariable,
     OperatorLTIntChainAns,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
     OperatorLTVariableInt,
-    OperatorError,
     OperatorLTVariableVariable,
     OperatorLTVariableChainAns,
     OperatorLTChainAnsInt,
-    OperatorError,
     OperatorLTChainAnsVariable,
     OperatorError,
     
     OperatorError,
-    OperatorError,
     OperatorGTIntVariable,
     OperatorGTIntChainAns,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
     OperatorGTVariableInt,
-    OperatorError,
     OperatorGTVariableVariable,
     OperatorGTVariableChainAns,
     OperatorGTChainAnsInt,
-    OperatorError,
     OperatorGTChainAnsVariable,
     OperatorError,
     
     OperatorError,
-    OperatorError,
     OperatorLEIntVariable,
     OperatorLEIntChainAns,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
     OperatorLEVariableInt,
-    OperatorError,
     OperatorLEVariableVariable,
     OperatorLEVariableChainAns,
     OperatorLEChainAnsInt,
-    OperatorError,
     OperatorLEChainAnsVariable,
     OperatorError,
     
     OperatorError,
-    OperatorError,
     OperatorGEIntVariable,
     OperatorGEIntChainAns,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
     OperatorGEVariableInt,
-    OperatorError,
     OperatorGEVariableVariable,
     OperatorGEVariableChainAns,
     OperatorGEChainAnsInt,
-    OperatorError,
     OperatorGEChainAnsVariable,
     OperatorError,
     
     OperatorError,
     OperatorError,
     OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
     OperatorNEVariableInt,
-    OperatorError,
     OperatorNEVariableVariable,
     OperatorError,
     OperatorNEChainAnsInt,
-    OperatorError,
     OperatorNEChainAnsVariable,
     OperatorError,
     
     OperatorError,
     OperatorError,
     OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
     OperatorMulVariableInt,
-    OperatorError,
     OperatorMulVariableVariable,
     OperatorError,
     OperatorMulChainAnsInt,
-    OperatorError,
     OperatorMulChainAnsVariable,
     OperatorError,
     
     OperatorError,
-    OperatorError,
     OperatorDivIntVariable,
     OperatorDivIntChainAns,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
     OperatorDivVariableInt,
-    OperatorError,
     OperatorDivVariableVariable,
     OperatorDivVariableChainAns,
     OperatorDivChainAnsInt,
-    OperatorError,
     OperatorDivChainAnsVariable,
     OperatorError,
     
     OperatorError,
     OperatorError,
     OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
     OperatorAddVariableInt,
-    OperatorError,
     OperatorAddVariableVariable,
     OperatorError,
     OperatorAddChainAnsInt,
-    OperatorError,
     OperatorAddChainAnsVariable,
     OperatorError,
     
     OperatorError,
-    OperatorError,
     OperatorSubIntVariable,
     OperatorSubIntChainAns,
-    OperatorError,
-    OperatorError,
-    OperatorError,
-    OperatorError,
     OperatorSubVariableInt,
-    OperatorError,
     OperatorSubVariableVariable,
     OperatorSubVariableChainAns,
     OperatorSubChainAnsInt,
-    OperatorError,
     OperatorSubChainAnsVariable,
     OperatorError
 };
@@ -973,7 +865,6 @@ void OperatorMulChainPushChainAns(void) {
 void OperatorDivChainPushChainAns(void) {
     AnsToBC();
     POP_HL();
-    CALL(__idvrmu);
 }
 
 void OperatorAddChainPushChainAns(void) {

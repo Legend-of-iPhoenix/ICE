@@ -220,7 +220,7 @@ uint8_t FunctionAns(uint8_t tok) {
 }
 
 uint8_t FunctionParen(uint8_t tok) {
-	return VALID;
+	return E_ICE_ERROR;
 }
 
 uint8_t FunctionBrack(uint8_t tok) {
