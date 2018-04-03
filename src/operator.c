@@ -263,13 +263,25 @@ void OperatorError(void) {
 * integers as arguments
 ****************************/
 
+void OperatorStoreChainAnsVariable(void) {
+    uint8_t offset = prescan.variables[operand2.var].offset;
+    
+    MaybeAToHL();
+    if (expr.outputRegister == REGISTER_DE) {
+        LD_IX_OFF_IND_DE(offset);
+    } else {
+        LD_IX_OFF_IND_HL(offset);
+    }
+}
+
 void OperatorStoreIntVariable(void) {
+    LD_HL_IMM(operand1.num);
+    OperatorStoreChainAnsVariable();
 }
 
 void OperatorStoreVariableVariable(void) {
-}
-
-void OperatorStoreChainAnsVariable(void) {
+    LD_HL_IND_IX_OFF(prescan.variables[operand1.var].offset);
+    OperatorStoreChainAnsVariable();
 }
 
 void OperatorBitAndChainAnsInt(void) {
