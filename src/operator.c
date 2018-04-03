@@ -197,7 +197,7 @@ uint8_t compileOperator(uint24_t index) {
         }
         
         // If we can swap the arguments, we have less possibilities
-        if (operatorCanSwap[operatorIndex] && (type1 <= TYPE_FLOAT || type2 == TYPE_CHAIN_ANS)) {
+        if (op == tLE || op == tLT || (operatorCanSwap[operatorIndex] && (type1 <= TYPE_FLOAT || type2 == TYPE_CHAIN_ANS))) {
             OperatorsSwap();
         }
         
@@ -207,11 +207,6 @@ uint8_t compileOperator(uint24_t index) {
         }
         if (type2 > TYPE_FLOAT) {
             type2--;
-        }
-        
-        // < is the same as > and <= the same as >=, only need to swap the arguments
-        if (op == tLE || op == tLT) {
-            OperatorsSwap();
         }
         
         // > is the same as >=, except scf / or a, a
@@ -224,6 +219,12 @@ uint8_t compileOperator(uint24_t index) {
         if (op == tDiv) {
             CALL(__idvrmu);
             expr.returnRegister = REGISTER_DE;
+        } else if (op == tDotIcon) {
+            CALL(__iand);
+        } else if (op == tCrossIcon) {
+            CALL(__ior);
+        } else if (op == tBoxIcon) {
+            CALL(__ixor);
         }
     }
     
@@ -271,41 +272,35 @@ void OperatorStoreVariableVariable(void) {
 void OperatorStoreChainAnsVariable(void) {
 }
 
-void OperatorBitAndVariableInt(void) {
-}
-
-void OperatorBitAndVariableVariable(void) {
-}
-
 void OperatorBitAndChainAnsInt(void) {
+    AnsToHL();
+    LD_BC_IMM(operand2.num);
 }
 
 void OperatorBitAndChainAnsVariable(void) {
+    AnsToHL();
+    LD_BC_IND_IX_OFF(prescan.variables[operand2.var].offset);
 }
 
-void OperatorBitOrVariableInt(void) {
+void OperatorBitAndVariableInt(void) {
+    LD_HL_IND_IX_OFF(prescan.variables[operand1.var].offset);
+    OperatorBitAndChainAnsInt();
 }
 
-void OperatorBitOrVariableVariable(void) {
+void OperatorBitAndVariableVariable(void) {
+    LD_HL_IND_IX_OFF(prescan.variables[operand1.var].offset);
+    OperatorBitAndChainAnsVariable();
 }
 
-void OperatorBitOrChainAnsInt(void) {
-}
+#define OperatorBitOrVariableInt       OperatorBitAndVariableInt
+#define OperatorBitOrVariableVariable  OperatorBitAndVariableVariable
+#define OperatorBitOrChainAnsInt       OperatorBitAndChainAnsInt
+#define OperatorBitOrChainAnsVariable  OperatorBitAndChainAnsVariable
 
-void OperatorBitOrChainAnsVariable(void) {
-}
-
-void OperatorBitXorVariableInt(void) {
-}
-
-void OperatorBitXorVariableVariable(void) {
-}
-
-void OperatorBitXorChainAnsInt(void) {
-}
-
-void OperatorBitXorChainAnsVariable(void) {
-}
+#define OperatorBitXorVariableInt      OperatorBitAndVariableInt
+#define OperatorBitXorVariableVariable OperatorBitAndVariableVariable
+#define OperatorBitXorChainAnsInt      OperatorBitAndChainAnsInt
+#define OperatorBitXorChainAnsVariable OperatorBitAndChainAnsVariable
 
 void AndInsert(void) {
 }
