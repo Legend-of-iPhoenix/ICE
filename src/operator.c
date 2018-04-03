@@ -209,6 +209,16 @@ uint8_t compileOperator(uint24_t index) {
             type2--;
         }
         
+        // < is the same as > and <= the same as >=, only need to swap the arguments
+        if (op == tLE || op == tLT) {
+            OperatorsSwap();
+        }
+        
+        // > is the same as >=, except scf / or a, a
+        if (op == tGT) {
+            operatorIndex = getIndexOfOperator(tGE);
+        }
+        
         (*operatorsPointers[operatorIndex * 9 + (type1 - 1) * 3 + type2 - 1])();
         
         if (op == tDiv) {
@@ -366,88 +376,77 @@ void OperatorEQChainAnsInt(void) {
 void OperatorEQChainAnsVariable(void) {
 }
 
-void OperatorLTIntVariable(void) {
-}
+#define OperatorLTIntVariable      OperatorGTIntVariable
+#define OperatorLTIntChainAns      OperatorGTIntChainAns
+#define OperatorLTVariableInt      OperatorGTVariableInt
+#define OperatorLTVariableVariable OperatorGTVariableVariable
+#define OperatorLTVariableChainAns OperatorGTVariableChainAns
+#define OperatorLTChainAnsInt      OperatorGTChainAnsInt
+#define OperatorLTChainAnsVariable OperatorGTChainAnsVariable
 
-void OperatorLTIntChainAns(void) {
-}
+#define OperatorGTIntVariable      OperatorGEIntVariable
+#define OperatorGTIntChainAns      OperatorGEIntChainAns
+#define OperatorGTVariableInt      OperatorGEVariableInt
+#define OperatorGTVariableVariable OperatorGEVariableVariable
+#define OperatorGTVariableChainAns OperatorGEVariableChainAns
+#define OperatorGTChainAnsInt      OperatorGEChainAnsInt
+#define OperatorGTChainAnsVariable OperatorGEChainAnsVariable
 
-void OperatorLTVariableInt(void) {
-}
+#define OperatorLEIntVariable      OperatorGEIntVariable
+#define OperatorLEIntChainAns      OperatorGEIntChainAns
+#define OperatorLEVariableInt      OperatorGEVariableInt
+#define OperatorLEVariableVariable OperatorGEVariableVariable
+#define OperatorLEVariableChainAns OperatorGEVariableChainAns
+#define OperatorLEChainAnsInt      OperatorGEChainAnsInt
+#define OperatorLEChainAnsVariable OperatorGEChainAnsVariable
 
-void OperatorLTVariableVariable(void) {
-}
-
-void OperatorLTVariableChainAns(void) {
-}
-
-void OperatorLTChainAnsInt(void) {
-}
-
-void OperatorLTChainAnsVariable(void) {
-}
-
-void OperatorGTIntVariable(void) {
-}
-
-void OperatorGTIntChainAns(void) {
-}
-
-void OperatorGTVariableInt(void) {
-}
-
-void OperatorGTVariableVariable(void) {
-}
-
-void OperatorGTVariableChainAns(void) {
-}
-
-void OperatorGTChainAnsInt(void) {
-}
-
-void OperatorGTChainAnsVariable(void) {
-}
-
-void OperatorLEIntVariable(void) {
-}
-
-void OperatorLEIntChainAns(void) {
-}
-
-void OperatorLEVariableInt(void) {
-}
-
-void OperatorLEVariableVariable(void) {
-}
-
-void OperatorLEVariableChainAns(void) {
-}
-
-void OperatorLEChainAnsInt(void) {
-}
-
-void OperatorLEChainAnsVariable(void) {
-}
-
-void OperatorGEIntVariable(void) {
-}
-
-void OperatorGEIntChainAns(void) {
-}
-
-void OperatorGEVariableInt(void) {
-}
-
-void OperatorGEVariableVariable(void) {
-}
-
-void OperatorGEVariableChainAns(void) {
+void GEInsert(void) {
+    if (op == tGE || op == tLE) {
+        OR_A_A();
+    } else {
+        SCF();
+    }
+    SBC_HL_DE();
+    SBC_HL_HL_INC_HL();
 }
 
 void OperatorGEChainAnsInt(void) {
+    AnsToHL();
+    LD_DE_IMM(operand2.num);
+    GEInsert();
 }
 
 void OperatorGEChainAnsVariable(void) {
+    AnsToHL();
+    LD_DE_IND_IX_OFF(prescan.variables[operand2.var].offset);
+    GEInsert();
+}
+
+void OperatorGEIntVariable(void) {
+    LD_HL_IMM(operand1.num);
+    OperatorGEChainAnsVariable();
+}
+
+void OperatorGEIntChainAns(void) {
+    AnsToDE();
+    LD_HL_IMM(operand1.num);
+    GEInsert();
+}
+
+void OperatorGEVariableInt(void) {
+    LD_HL_IND_IX_OFF(prescan.variables[operand1.var].offset);
+    OperatorGEChainAnsInt();
+}
+
+void OperatorGEVariableVariable(void) {
+    LD_HL_IND_IX_OFF(prescan.variables[operand1.var].offset);
+    OperatorGEChainAnsVariable();
+}
+
+void OperatorGEVariableChainAns(void) {
+    AnsToDE();
+    LD_HL_IND_IX_OFF(prescan.variables[operand1.var].offset);
+    GEInsert();
 }
 
 #define OperatorNEVariableInt       OperatorEQVariableInt
@@ -720,13 +719,13 @@ void (*operatorsPointers[153])(void) = {
     OperatorError,
     
     OperatorError,
-    OperatorGTIntVariable,
-    OperatorGTIntChainAns,
-    OperatorGTVariableInt,
-    OperatorGTVariableVariable,
-    OperatorGTVariableChainAns,
-    OperatorGTChainAnsInt,
-    OperatorGTChainAnsVariable,
+    OperatorError,
+    OperatorError,
+    OperatorError,
+    OperatorError,
+    OperatorError,
+    OperatorError,
+    OperatorError,
     OperatorError,
     
     OperatorError,
