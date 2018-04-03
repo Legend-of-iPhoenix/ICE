@@ -153,6 +153,7 @@ uint8_t compileOperator(uint24_t index) {
     expr.returnRegister = REGISTER_HL;
     isFloatExpression = (isFloat1 || isFloat2);
     
+    // ICE error
     if ((type1 == TYPE_CHAIN_PUSH || type2 == TYPE_CHAIN_PUSH) && type2 != TYPE_CHAIN_ANS) {
         return E_ICE_ERROR;
     }
@@ -163,8 +164,37 @@ uint8_t compileOperator(uint24_t index) {
             // Convert the previous Ans and current Ans to floats
             OperatorFloatChainPushChainAns();
         } else {
-            // Convert both arguments to floats
-            (*operatorsFloatPointers[(type1 - 1) * 4 + type2 - 1])();
+            // Check special case: ->
+            if (op == tStore) {
+                uint8_t offsetTo = prescan.variables[operand2.var].offset;
+                
+                if (type2 != TYPE_VARIABLE) {
+                    return E_SYNTAX;
+                }
+                
+                if (type1 <= TYPE_FLOAT) {
+                    LD_A_BC_FLOAT(operand1.num);
+                } else if (type1 == TYPE_VARIABLE) {
+                    uint8_t offsetFrom = prescan.variables[operand1.var].offset;
+                    
+                    if (isFloat1) {
+                        LD_A_BC_IND_IX_OFF(offsetFrom);
+                    } else {
+                        LD_BC_IND_IX_OFF(offsetFrom);
+                        CALL(__ultof);
+                    }
+                } else {
+                    if (!isFloat1) {
+                        AnsToBC();
+                        CALL(__ultof);
+                    }
+                }
+                LD_IX_OFF_IND_BC(offsetTo);
+                LD_IX_OFF_IND_A(offsetTo + 3);
+            } else {
+                // Convert both arguments to floats
+                (*operatorsFloatPointers[(type1 - 1) * 4 + type2 - 1])();
+            }
         }
         
         // Call the right code to finish the floats

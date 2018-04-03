@@ -159,6 +159,8 @@
 #define LD_DE_IND_IX_OFF(off) do { LoadRegVariable(REGISTER_DE, off); } while (0)
 #define LD_HL_IND_IX_OFF(off) do { LoadRegVariable(REGISTER_HL, off); } while (0)
 #define LD_IY_IND_IX_OFF(off) do { output(uint16_t, 0x31DD); output(uint8_t, off); } while (0)
+#define LD_IX_OFF_IND_A(off)  do { output(uint16_t, 0x77DD); output(uint8_t, off); reg.AIsVariable = true; reg.AVariable = off; } while (0)
+#define LD_IX_OFF_IND_BC(off) do { output(uint16_t, 0x0FDD); output(uint8_t, off); reg.BCIsVariable = true; reg.BCVariable = off; } while (0)
 #define LD_IX_OFF_IND_DE(off) do { output(uint16_t, 0x1FDD); output(uint8_t, off); reg.DEIsVariable = true; reg.DEVariable = off; } while (0)
 #define LD_IX_OFF_IND_HL(off) do { output(uint16_t, 0x2FDD); output(uint8_t, off); reg.HLIsVariable = true; reg.HLVariable = off; } while (0)
 #define LD_IX_IMM(val)        do { output(uint16_t, 0x21DD); output(uint24_t, val); } while (0)
