@@ -22,6 +22,10 @@ uint8_t getIndexOfOperator(uint8_t op);
 uint8_t compileOperator(uint24_t index);
 void OperatorError(void);
 void OperatorsSwap(void);
+void AndInsert(void);
+void XorInsert(void);
+void OrInsert(void);
+void EQInsert(void);
 void OperatorFloatChainPushChainAns(void);
 
 #endif

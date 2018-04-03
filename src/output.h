@@ -127,6 +127,7 @@
 #define OP_AND_A        0xE6
 #define OP_EX_DE_HL     0xEB
 #define OP_XOR_A        0xEE
+#define OP_POP_AF       0xF1
 #define OP_PUSH_AF      0xF5
 #define OP_OR_A         0xF6
 #define OP_CP_A         0xFE
@@ -218,12 +219,14 @@
 #define MLT_HL()              do { output(uint16_t, 0x6CED); ResetReg(REGISTER_HL); } while (0)
 
 #define OR_A_SBC_HL_DE()      do { output(uint24_t, 0x52EDB7); ResetReg(REGISTER_HL); } while (0)
+#define OR_A_SBC_HL_HL()      do { output(uint24_t, 0x62EDB7); ResetReg(REGISTER_HL); } while (0)
 #define SBC_HL_HL_INC_HL()    do { output(uint24_t, 0x2362ED); ResetReg(REGISTER_HL); } while (0)
 
 #define PUSH_AF()             do { output(uint8_t, OP_PUSH_AF); } while (0)
 #define PUSH_BC()             do { output(uint8_t, OP_PUSH_BC); } while (0)
 #define PUSH_DE()             do { output(uint8_t, OP_PUSH_DE); } while (0)
 #define PUSH_HL()             do { output(uint8_t, OP_PUSH_HL); } while (0)
+#define POP_AF()              do { output(uint8_t, OP_POP_AF); ResetReg(REGISTER_A); } while (0)
 #define POP_BC()              do { output(uint8_t, OP_POP_BC); ResetReg(REGISTER_BC); } while (0)
 #define POP_DE()              do { output(uint8_t, OP_POP_DE); ResetReg(REGISTER_DE); } while (0)
 #define POP_HL()              do { output(uint8_t, OP_POP_HL); ResetReg(REGISTER_HL); } while (0)

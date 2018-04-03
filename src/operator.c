@@ -14,6 +14,7 @@ const char operators[18]              = {tStore, tDotIcon, tCrossIcon, tBoxIcon,
 const uint8_t operatorPrecedence[17]  = {0, 6, 8, 8, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
 const uint8_t operatorPrecedence2[17] = {9, 6, 8, 8, 2, 1, 1, 3, 3, 3, 3, 3, 3, 5, 5, 4, 4};
 const uint8_t operatorCanSwap[17]     = {0, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 1, 0}; // Used for operators which can swap the operands, i.e. A*B = B*A
+static bool canSwap;
 static bool isFloat1;
 static bool isFloat2;
 extern bool isFloatExpression;
@@ -146,11 +147,11 @@ uint8_t compileOperator(uint24_t index) {
                      ((type2 == TYPE_CHAIN_ANS || type2 == TYPE_CHAIN_PUSH) && outputPrev.operand.ansType == TYPE_FLOAT));
     operand1       = outputPrevPrev.operand;
     operand2       = outputPrev.operand;
+    operatorIndex  = getIndexOfOperator(op);
+    canSwap        = operatorCanSwap[operatorIndex];
     
     expr.returnRegister = REGISTER_HL;
     isFloatExpression = (isFloat1 || isFloat2);
-    
-    operatorIndex = getIndexOfOperator(op);
     
     if ((type1 == TYPE_CHAIN_PUSH || type2 == TYPE_CHAIN_PUSH) && type2 != TYPE_CHAIN_ANS) {
         return E_ICE_ERROR;
@@ -230,10 +231,12 @@ void OperatorsSwap(void) {
 void OperatorError(void) {
 }
 
-void OperatorStoreIntVariable(void) {
-}
+/****************************
+* All these functions use
+* integers as arguments
+****************************/
 
-void OperatorStoreFloatVariable(void) {
+void OperatorStoreIntVariable(void) {
 }
 
 void OperatorStoreVariableVariable(void) {
@@ -278,10 +281,10 @@ void OperatorBitXorChainAnsInt(void) {
 void OperatorBitXorChainAnsVariable(void) {
 }
 
-void OperatorAndVariableInt(void) {
+void AndInsert(void) {
 }
 
-void OperatorAndVariableFloat(void) {
+void OperatorAndVariableInt(void) {
 }
 
 void OperatorAndVariableVariable(void) {
@@ -290,16 +293,13 @@ void OperatorAndVariableVariable(void) {
 void OperatorAndChainAnsInt(void) {
 }
 
-void OperatorAndChainAnsFloat(void) {
-}
-
 void OperatorAndChainAnsVariable(void) {
 }
 
-void OperatorXorVariableInt(void) {
+void XorInsert(void) {
 }
 
-void OperatorXorVariableFloat(void) {
+void OperatorXorVariableInt(void) {
 }
 
 void OperatorXorVariableVariable(void) {
@@ -308,16 +308,13 @@ void OperatorXorVariableVariable(void) {
 void OperatorXorChainAnsInt(void) {
 }
 
-void OperatorXorChainAnsFloat(void) {
-}
-
 void OperatorXorChainAnsVariable(void) {
 }
 
-void OperatorOrVariableInt(void) {
+void OrInsert(void) {
 }
 
-void OperatorOrVariableFloat(void) {
+void OperatorOrVariableInt(void) {
 }
 
 void OperatorOrVariableVariable(void) {
@@ -326,25 +323,28 @@ void OperatorOrVariableVariable(void) {
 void OperatorOrChainAnsInt(void) {
 }
 
-void OperatorOrChainAnsFloat(void) {
-}
-
 void OperatorOrChainAnsVariable(void) {
 }
 
-void OperatorEQVariableInt(void) {
+void EQInsert(void) {
+    OR_A_SBC_HL_DE();
+    if (op == tEQ) {
+        INC_HL();
+        JR_Z(3);
+        OR_A_SBC_HL_HL();
+    } else {
+        JR_Z(4);
+        LD_HL_IMM(1);
+    }
 }
 
-void OperatorEQVariableFloat(void) {
+void OperatorEQVariableInt(void) {
 }
 
 void OperatorEQVariableVariable(void) {
 }
 
 void OperatorEQChainAnsInt(void) {
-}
-
-void OperatorEQChainAnsFloat(void) {
 }
 
 void OperatorEQChainAnsVariable(void) {
@@ -356,16 +356,7 @@ void OperatorLTIntVariable(void) {
 void OperatorLTIntChainAns(void) {
 }
 
-void OperatorLTFloatVariable(void) {
-}
-
-void OperatorLTFloatChainAns(void) {
-}
-
 void OperatorLTVariableInt(void) {
-}
-
-void OperatorLTVariableFloat(void) {
 }
 
 void OperatorLTVariableVariable(void) {
@@ -377,9 +368,6 @@ void OperatorLTVariableChainAns(void) {
 void OperatorLTChainAnsInt(void) {
 }
 
-void OperatorLTChainAnsFloat(void) {
-}
-
 void OperatorLTChainAnsVariable(void) {
 }
 
@@ -389,16 +377,7 @@ void OperatorGTIntVariable(void) {
 void OperatorGTIntChainAns(void) {
 }
 
-void OperatorGTFloatVariable(void) {
-}
-
-void OperatorGTFloatChainAns(void) {
-}
-
 void OperatorGTVariableInt(void) {
-}
-
-void OperatorGTVariableFloat(void) {
 }
 
 void OperatorGTVariableVariable(void) {
@@ -410,9 +389,6 @@ void OperatorGTVariableChainAns(void) {
 void OperatorGTChainAnsInt(void) {
 }
 
-void OperatorGTChainAnsFloat(void) {
-}
-
 void OperatorGTChainAnsVariable(void) {
 }
 
@@ -422,16 +398,7 @@ void OperatorLEIntVariable(void) {
 void OperatorLEIntChainAns(void) {
 }
 
-void OperatorLEFloatVariable(void) {
-}
-
-void OperatorLEFloatChainAns(void) {
-}
-
 void OperatorLEVariableInt(void) {
-}
-
-void OperatorLEVariableFloat(void) {
 }
 
 void OperatorLEVariableVariable(void) {
@@ -443,9 +410,6 @@ void OperatorLEVariableChainAns(void) {
 void OperatorLEChainAnsInt(void) {
 }
 
-void OperatorLEChainAnsFloat(void) {
-}
-
 void OperatorLEChainAnsVariable(void) {
 }
 
@@ -455,16 +419,7 @@ void OperatorGEIntVariable(void) {
 void OperatorGEIntChainAns(void) {
 }
 
-void OperatorGEFloatVariable(void) {
-}
-
-void OperatorGEFloatChainAns(void) {
-}
-
 void OperatorGEVariableInt(void) {
-}
-
-void OperatorGEVariableFloat(void) {
 }
 
 void OperatorGEVariableVariable(void) {
@@ -476,23 +431,13 @@ void OperatorGEVariableChainAns(void) {
 void OperatorGEChainAnsInt(void) {
 }
 
-void OperatorGEChainAnsFloat(void) {
-}
-
 void OperatorGEChainAnsVariable(void) {
 }
 
 #define OperatorNEVariableInt       OperatorEQVariableInt
-#define OperatorNEVariableFloat     OperatorEQVariableFloat
 #define OperatorNEVariableVariable  OperatorEQVariableVariable
 #define OperatorNEChainAnsInt       OperatorEQChainAnsInt
-#define OperatorNEChainAnsFloat     OperatorEQChainAnsFloat
 #define OperatorNEChainAnsVariable  OperatorEQChainAnsVariable
-
-/****************************
-* All these functions use
-* integers as arguments
-****************************/
 
 void OperatorMulVariableInt(void) {
 }
@@ -528,153 +473,58 @@ void OperatorDivChainAnsVariable(void) {
 }
 
 void OperatorAddChainAnsInt(void) {
-    float num = operand2.num;
+    uint8_t a;
+    uint24_t num = operand2.num;
     
-    if (isFloat1) {
-        LD_HL_IMM(get3ByteOfFloat(num));
-        LD_E(getLastByteOfFloat(num));
-    } else {
-        uint8_t a;
-        uint24_t num2 = num;
-        
-        if (num2 < 5) {
-            for (a = 0; a < num2; a++) {
-                if (expr.outputRegister == REGISTER_HL) {
-                    INC_HL();
-                } else {
-                    INC_DE();
-                }
-            }
-            expr.returnRegister = expr.outputRegister;
-        } else if (num2 > 0x1000000 - 5) {
-            for (a = 0; a < -num2; a++) {
-                if (expr.outputRegister == REGISTER_HL) {
-                    DEC_HL();
-                } else {
-                    DEC_DE();
-                }
-            }
-            expr.returnRegister = expr.outputRegister;
-        } else {
+    if (num < 5) {
+        for (a = 0; a < num; a++) {
             if (expr.outputRegister == REGISTER_HL) {
-                LD_DE_IMM(num2);
+                INC_HL();
             } else {
-                LD_HL_IMM(num2);
+                INC_DE();
             }
-            ADD_HL_DE();
         }
+        expr.returnRegister = expr.outputRegister;
+    } else if (num > 0x1000000 - 5) {
+        for (a = 0; a < -num; a++) {
+            if (expr.outputRegister == REGISTER_HL) {
+                DEC_HL();
+            } else {
+                DEC_DE();
+            }
+        }
+        expr.returnRegister = expr.outputRegister;
+    } else {
+        if (expr.outputRegister == REGISTER_HL) {
+            LD_DE_IMM(num2);
+        } else {
+            LD_HL_IMM(num2);
+        }
+        ADD_HL_DE();
     }
-}
-
-void OperatorAddChainAnsFloat(void) {
-    float num = operand2.num;
-    
-    if (!isFloat1) {
-        AnsToBC();
-        CALL(__ultof);
-    }
-    
-    LD_HL_IMM(get3ByteOfFloat(num));
-    LD_E(getLastByteOfFloat(num));
 }
 
 void OperatorAddChainAnsVariable(void) {
-    uint8_t offset2 = prescan.variables[operand2.var].offset;
+    uint8_t offset = prescan.variables[operand2.var].offset;
     
-    if (isFloat1) {
-        if (isFloat2) {
-            LD_E_HL_IND_IX_OFF(offset2);
-        } else {
-            FloatAnsToEUHL();
-            LD_BC_IND_IX_OFF(offset2);
-            CALL(__ultof);
-        }
+    MaybeAToHL();
+    if (expr.outputRegister == REGISTER_DE) {
+        LD_HL_IND_IX_OFF(offset);
     } else {
-        if (isFloat2) {
-            AnsToBC();
-            CALL(__ultof);
-            LD_E_HL_IND_IX_OFF(offset2);
-        } else {
-            if (expr.outputRegister == REGISTER_DE) {
-                LD_HL_IND_IX_OFF(offset2);
-            } else {
-                LD_DE_IND_IX_OFF(offset2);
-            }
-            ADD_HL_DE();
-        }
+        LD_DE_IND_IX-OFF(offset);
     }
+    ADD_HL_DE();
 }
 
 void OperatorAddVariableInt(void) {
-    if (isFloat1) {
-        LD_A_BC_IND_IX_OFF(prescan.variables[operand1.var].offset);
-    } else {
-        LD_HL_IND_IX_OFF(operand2.var);
-    }
-    OperatorAddChainAnsInt();
-}
-
-void OperatorAddVariableFloat(void) {
-    uint8_t offset = prescan.variables[operand1.var].offset;
-    
-    if (isFloat1) {
-        LD_A_BC_IND_IX_OFF(offset);
-    } else {
-        LD_BC_IND_IX_OFF(offset);
-        CALL(__ultof);
-        isFloat1 = true;
-    }
-    OperatorAddChainAnsFloat();
+    LD_HL_IND_IX_OFF(prescan.variables[operand1.var].offset);
+    OperatorAddChainAnsint(void);
 }
 
 void OperatorAddVariableVariable(void) {
-    uint8_t offset1 = prescan.variables[operand1.var].offset;
-    uint8_t offset2 = prescan.variables[operand2.var].offset;
-    
-    if (isFloat1) {
-        if (isFloat2) {
-            LD_A_BC_IND_IX_OFF(offset1);
-            OperatorAddChainAnsVariable();
-        } else {
-            LD_BC_IND_IX_OFF(offset2);
-            CALL(__ultof);
-            LD_E_HL_IND_IX_OFF(offset1);
-        }
-    } else {
-        if (isFloat2) {
-            OperatorsSwap();
-            OperatorAddVariableVariable();
-        } else {
-            LD_HL_IND_IX_OFF(offset1);
-            OperatorAddChainAnsVariable();
-        }
-    }
+    LD_HL_IND_IX_OFF(prescan.variables[operand1.var].offset);
+    OperatorAddChainAnsVariable(void);
 }
-
-void OperatorAddChainPushChainAns(void) {
-    if (isFloat1) {
-        if (!isFloat2) {
-            AnsToBC();
-            CALL(__ultof);
-        }
-        POP_HL();
-        POP_DE();
-    } else {
-        if (isFloat2) {
-            FloatAnsToEUHL();
-            POP_BC();
-            CALL(__ultof);
-        } else {
-            if (expr.outputRegister == REGISTER_DE) {
-                POP_HL();
-            } else {
-                POP_DE();
-            }
-            ADD_HL_DE();
-        }
-    }
-}
-
 
 void OperatorSubIntVariable(void) {
 }
@@ -682,16 +532,7 @@ void OperatorSubIntVariable(void) {
 void OperatorSubIntChainAns(void) {
 }
 
-void OperatorSubFloatVariable(void) {
-}
-
-void OperatorSubFloatChainAns(void) {
-}
-
 void OperatorSubVariableInt(void) {
-}
-
-void OperatorSubVariableFloat(void) {
 }
 
 void OperatorSubVariableVariable(void) {
@@ -701,9 +542,6 @@ void OperatorSubVariableChainAns(void) {
 }
 
 void OperatorSubChainAnsInt(void) {
-}
-
-void OperatorSubChainAnsFloat(void) {
 }
 
 void OperatorSubChainAnsVariable(void) {
@@ -716,7 +554,7 @@ void (*operatorsPointers[272])(void) = {
     OperatorError,
     OperatorError,
     OperatorError,
-    OperatorStoreFloatVariable,
+    OperatorError,
     OperatorError,
     OperatorError,
     OperatorError,
@@ -787,11 +625,11 @@ void (*operatorsPointers[272])(void) = {
     OperatorError,
     OperatorError,
     OperatorAndVariableInt,
-    OperatorAndVariableFloat,
+    OperatorError,
     OperatorAndVariableVariable,
     OperatorError,
     OperatorAndChainAnsInt,
-    OperatorAndChainAnsFloat,
+    OperatorError,
     OperatorAndChainAnsVariable,
     OperatorError,
     
@@ -804,11 +642,11 @@ void (*operatorsPointers[272])(void) = {
     OperatorError,
     OperatorError,
     OperatorXorVariableInt,
-    OperatorXorVariableFloat,
+    OperatorError,
     OperatorXorVariableVariable,
     OperatorError,
     OperatorXorChainAnsInt,
-    OperatorXorChainAnsFloat,
+    OperatorError,
     OperatorXorChainAnsVariable,
     OperatorError,
     
@@ -821,11 +659,11 @@ void (*operatorsPointers[272])(void) = {
     OperatorError,
     OperatorError,
     OperatorOrVariableInt,
-    OperatorOrVariableFloat,
+    OperatorError,
     OperatorOrVariableVariable,
     OperatorError,
     OperatorOrChainAnsInt,
-    OperatorOrChainAnsFloat,
+    OperatorError,
     OperatorOrChainAnsVariable,
     OperatorError,
     
@@ -838,11 +676,11 @@ void (*operatorsPointers[272])(void) = {
     OperatorError,
     OperatorError,
     OperatorEQVariableInt,
-    OperatorEQVariableFloat,
+    OperatorError,
     OperatorEQVariableVariable,
     OperatorError,
     OperatorEQChainAnsInt,
-    OperatorEQChainAnsFloat,
+    OperatorError,
     OperatorEQChainAnsVariable,
     OperatorError,
     
@@ -852,14 +690,14 @@ void (*operatorsPointers[272])(void) = {
     OperatorLTIntChainAns,
     OperatorError,
     OperatorError,
-    OperatorLTFloatVariable,
-    OperatorLTFloatChainAns,
+    OperatorError,
+    OperatorError,
     OperatorLTVariableInt,
-    OperatorLTVariableFloat,
+    OperatorError,
     OperatorLTVariableVariable,
     OperatorLTVariableChainAns,
     OperatorLTChainAnsInt,
-    OperatorLTChainAnsFloat,
+    OperatorError,
     OperatorLTChainAnsVariable,
     OperatorError,
     
@@ -869,14 +707,14 @@ void (*operatorsPointers[272])(void) = {
     OperatorGTIntChainAns,
     OperatorError,
     OperatorError,
-    OperatorGTFloatVariable,
-    OperatorGTFloatChainAns,
+    OperatorError,
+    OperatorError,
     OperatorGTVariableInt,
-    OperatorGTVariableFloat,
+    OperatorError,
     OperatorGTVariableVariable,
     OperatorGTVariableChainAns,
     OperatorGTChainAnsInt,
-    OperatorGTChainAnsFloat,
+    OperatorError,
     OperatorGTChainAnsVariable,
     OperatorError,
     
@@ -886,14 +724,14 @@ void (*operatorsPointers[272])(void) = {
     OperatorLEIntChainAns,
     OperatorError,
     OperatorError,
-    OperatorLEFloatVariable,
-    OperatorLEFloatChainAns,
+    OperatorError,
+    OperatorError,
     OperatorLEVariableInt,
-    OperatorLEVariableFloat,
+    OperatorError,
     OperatorLEVariableVariable,
     OperatorLEVariableChainAns,
     OperatorLEChainAnsInt,
-    OperatorLEChainAnsFloat,
+    OperatorError,
     OperatorLEChainAnsVariable,
     OperatorError,
     
@@ -903,14 +741,14 @@ void (*operatorsPointers[272])(void) = {
     OperatorGEIntChainAns,
     OperatorError,
     OperatorError,
-    OperatorGEFloatVariable,
-    OperatorGEFloatChainAns,
+    OperatorError,
+    OperatorError,
     OperatorGEVariableInt,
-    OperatorGEVariableFloat,
+    OperatorError,
     OperatorGEVariableVariable,
     OperatorGEVariableChainAns,
     OperatorGEChainAnsInt,
-    OperatorGEChainAnsFloat,
+    OperatorError,
     OperatorGEChainAnsVariable,
     OperatorError,
     
@@ -923,11 +761,11 @@ void (*operatorsPointers[272])(void) = {
     OperatorError,
     OperatorError,
     OperatorNEVariableInt,
-    OperatorNEVariableFloat,
+    OperatorError,
     OperatorNEVariableVariable,
     OperatorError,
     OperatorNEChainAnsInt,
-    OperatorNEChainAnsFloat,
+    OperatorError,
     OperatorNEChainAnsVariable,
     OperatorError,
     
@@ -974,11 +812,11 @@ void (*operatorsPointers[272])(void) = {
     OperatorError,
     OperatorError,
     OperatorAddVariableInt,
-    OperatorAddVariableFloat,
+    OperatorError,
     OperatorAddVariableVariable,
     OperatorError,
     OperatorAddChainAnsInt,
-    OperatorAddChainAnsFloat,
+    OperatorError,
     OperatorAddChainAnsVariable,
     OperatorError,
     
@@ -988,53 +826,54 @@ void (*operatorsPointers[272])(void) = {
     OperatorSubIntChainAns,
     OperatorError,
     OperatorError,
-    OperatorSubFloatVariable,
-    OperatorSubFloatChainAns,
+    OperatorError,
+    OperatorError,
     OperatorSubVariableInt,
-    OperatorSubVariableFloat,
+    OperatorError,
     OperatorSubVariableVariable,
     OperatorSubVariableChainAns,
     OperatorSubChainAnsInt,
-    OperatorSubChainAnsFloat,
+    OperatorError,
     OperatorSubChainAnsVariable,
     OperatorError
 };
 
 void OperatorBitAndChainPushChainAns(void) {
+    AnsToHL();
+    POP_BC();
+    if (op == tDotIcon) {
+        CALL(__iand);
+    } else if (op == tBoxIcon) {
+        CALL(__ixor);
+    } else {
+        CALL(__ior);
+    }
 }
 
-void OperatorBitOrChainPushChainAns(void) {
-}
-
-void OperatorBitXorChainPushChainAns(void) {
-}
+#define OperatorBitOrChainPushChainAns  OperatorBitAndChainPushChainAns
+#define OperatorBitXorChainPushChainAns OperatorBitAndChainPushChainAns
 
 void OperatorAndChainPushChainAns(void) {
-}
-
-void OperatorXorChainPushChainAns(void) {
-}
-
-void OperatorOrChainPushChainAns(void) {
-}
-
-void OperatorEQChainPushChainAns(void) {
     MaybeAToHL();
     if (expr.outputRegister == REGISTER_DE) {
         POP_HL();
     } else {
         POP_DE();
     }
-    OR_A_SBC_HL_DE();
-    output(uint8_t, OP_LD_HL);
-    output(uint24_t, 0);
-    if (op == tEQ) {
-        JR_NZ(1);
+    if (op == tAnd) {
+        AndInsert();
+    } else if (op == tOr) {
+        OrInsert();
+    } else if (op == tXor) {
+        XorInsert();
     } else {
-        JR_Z(1);
+        EQInsert();
     }
-    INC_HL();
 }
+
+#define OperatorXorChainPushChainAns OperatorAndChainPushChainAns
+#define OperatorOrChainPushChainAns  OperatorAndChainPushChainAns
+#define OperatorEQChainPushChainAns  OperatorAndChainPushChainAns
 
 void OperatorLTChainPushChainAns(void) {
     if (op == tLT || op == tLE) {
@@ -1103,40 +942,178 @@ void (*operatorsChainPushPointers[17])(void) = {
     OperatorSubChainPushChainAns
 };
 
-void OperatorFloatIntVariable(void) {
+void OperatorFloatIntChainAns(void) {
+    float num = operand1.num;
+    
+    if (canSwap) {
+        LD_E_HL_FLOAT(num);
+    } else {
+        FloatAnsToEUHL();
+        LD_A_BC_FLOAT(num);
+    }
 }
 
-void OperatorFloatIntChainAns(void) {
+void OperatorFloatIntVariable(void) {
+    LD_E_HL_IND_IX_OFF(prescan.variables[operand2.var].offset);
+    LD_A_BC_FLOAT(operand1.num);
 }
 
 void OperatorFloatFloatVariable(void) {
+    uint8_t offset = prescan.variables[operand2.var].offset;
+    
+    if (isFloat2) {
+        LD_E_HL_IND_IX_OFF(offset);
+    } else {
+        LD_BC_IND_IX_OFF(offset);
+        CALL(__ultof);
+        FloatAnsToEUHL();
+    }
+    LD_A_BC_FLOAT(operand1.num);
 }
 
 void OperatorFloatFloatChainAns(void) {
+    float num = operand1.num;
+    
+    if (isFloat2) {
+        if (canSwap) {
+            LD_E_HL_FLOAT(num);
+        } else {
+            FloatAnsToEUHL();
+            LD_A_BC_FLOAT(num);
+        }
+    } else {
+        AnsToBC();
+        CALL(__ultof);
+        isFloat2 = true;
+        OperatorFloatFloatChainAns();
+    }
 }
 
 void OperatorFloatVariableInt(void) {
+    LD_A_BC_IND_IX_OFF(prescan.variables[operand1.var].offset);
+    LD_E_HL_FLOAT(operand2.num);
 }
 
 void OperatorFloatVariableFloat(void) {
+    uint8_t offset = prescan.variables[operand1.var].offset;
+    
+    if (isFloat1) {
+        LD_A_BC_IND_IX_OFF(offset);
+    } else {
+        LD_BC_IND_IX_OFF(offset);
+        CALL(__ultof);
+    }
+    LD_E_HL_FLOAT(operand2.num);
 }
 
 void OperatorFloatVariableVariable(void) {
+    uint8_t offset1 = prescan.variables[operand1.var].offset;
+    uint8_t offset2 = prescan.variables[operand2.var].offset;
+    
+    if (isFloat1) {
+        if (isFloat2) {
+            LD_A_BC_IND_IX_OFF(offset1);
+            LD_E_HL_IND_IX_OFF(offset2);
+        } else {
+            LD_BC_IND_IX_OFF(offset2);
+            CALL(__ultof);
+            if (canSwap) {
+                LD_E_HL_IND_IX_OFF(offset1);
+            } else {
+                FloatAnsToEUHL();
+                LD_A_BC_IND_IX_OFF(offset1);
+            }
+        }
+    } else {
+        LD_BC_IND_IX_OFF(offset1);
+        CALL(__ultof);
+        LD_E_HL_IND_IX_OFF(offset2);
+    }
 }
 
 void OperatorFloatVariableChainAns(void) {
+    uint8_t offset = prescan.variables[operand1.var].offset;
+    
+    if (isFloat1) {
+        if (isFloat2) {
+            FloatAnsToEUHL();
+            LD_A_BC_IND_IX_OFF(offset);
+        } else {
+            AnsToBC();
+            CALL(__ultof);
+            if (canSwap) {
+                LD_E_HL_IND_IX_OFF(offset);
+            } else {
+                FloatAnsToEUHL();
+                LD_A_BC_IND_IX_OFF(offset);
+            }
+        }
+    } else {
+        FloatAnsToEUHL();
+        LD_BC_IND_IX_OFF(offset);
+        CALL(__ultof);
+    }
 }
 
 void OperatorFloatChainAnsInt(void) {
+    LD_E_HL_FLOAT(operand2.num);
 }
 
 void OperatorFloatChainAnsFloat(void) {
+    if (!isFloat1) {
+        AnsToBC();
+        CALL(__ultof);
+    }
+    LD_E_HL_FLOAT(operand2.num);
 }
 
 void OperatorFloatChainAnsVariable(void) {
+    uint8_t offset = prescan.variables[operand2.var].offset;
+    
+    if (isFloat1) {
+        if (isFloat2) {
+            LD_E_HL_IND_IX_OFF(offset);
+        } else {
+            if (canSwap) {
+                FloatAnsToEUHL();
+                LD_BC_IND_IX_OFF(offset);
+                CALL(__ultof);
+            } else {
+                PUSH_BC();
+                PUSH_AF();
+                LD_BC_IND_IX_OFF(offset);
+                CALL(__ultof);
+                FloatAnsToEUHL();
+                POP_AF();
+                POP_BC();
+            }
+        }
+    } else {
+        AnsToBC();
+        CALL(__ultof);
+        LD_E_HL_IND_IX_OFF(offset);
+    }
 }
 
 void OperatorFloatChainPushChainAns(void) {
+    if (isFloat1) {
+        if (!isFloat2) {
+            AnsToBC();
+            CALL(__ultof);
+        }
+        if (canSwap) {
+            POP_HL();
+            POP_DE();
+        } else {
+            FloatAnsToEUHL();
+            POP_BC();
+            POP_AF();
+        }
+    } else {
+        FloatAnsToEUHL();
+        POP_BC();
+        CALL(__ultof);
+    }
 }
 
 void (*operatorsFloatPointers[16])(void) = {

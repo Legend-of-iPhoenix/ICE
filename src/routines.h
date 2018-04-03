@@ -21,6 +21,8 @@ void AnsToHL(void);
 void AnsToDE(void);
 void AnsToBC(void);
 void FloatAnsToEUHL(void);
+void LD_A_BC_FLOAT(float num);
+void LD_E_HL_FLOAT(float num);
 void PushAns(void);
 void LD_E_HL_IND_IX_OFF(uint8_t offset);
 void LD_A_BC_IND_IX_OFF(uint8_t offset);

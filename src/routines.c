@@ -66,8 +66,7 @@ void AnsToHL(void) {
 
 void MaybeAToHL(void) {
     if (expr.outputRegister == REGISTER_A) {
-        OR_A_A();
-        SBC_HL_HL();
+        OR_A_SBC_HL_HL();
         LD_L_A();
         reg.HLIsNumber = reg.AIsNumber;
         reg.HLIsVariable = false;
@@ -80,6 +79,16 @@ void FloatAnsToEUHL(void) {
     PUSH_BC();
     POP_HL();
     LD_E_A();
+}
+
+void LD_E_HL_FLOAT(float num) {
+    LD_HL_IMM(get3ByteOfFloat(num));
+    LD_E(getLastByteOfFloat(num));
+}
+
+void LD_A_BC_FLOAT(float num) {
+    LD_BC_IMM(get3ByteOfFloat(num));
+    LD_A(getLastByteOfFloat(num));
 }
 
 void PushAns(void) {
