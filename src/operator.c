@@ -160,6 +160,11 @@ uint8_t compileOperator(uint24_t index) {
     
     // One of the arguments is a float
     if (isFloatExpression) {
+        // Bitwise operators are always an error
+        if (op == tDotIcon || op == tCrossIcon || op == tBoxIcon) {
+            return E_SYNTAX;
+        }
+        
         if (type1 == TYPE_CHAIN_PUSH) {
             // Convert the previous Ans and current Ans to floats
             OperatorFloatChainPushChainAns();
@@ -172,6 +177,7 @@ uint8_t compileOperator(uint24_t index) {
                     return E_SYNTAX;
                 }
                 
+                // Load operand1
                 if (type1 <= TYPE_FLOAT) {
                     LD_A_BC_FLOAT(operand1.num);
                 } else if (type1 == TYPE_VARIABLE) {
@@ -220,14 +226,13 @@ uint8_t compileOperator(uint24_t index) {
         // Check valid arguments
         if (type1 == TYPE_BYTE || 
             type2 == TYPE_BYTE || 
-            (op == tStore && type2 != TYPE_VARIABLE) ||
-            (isFloatExpression && (op == tDotIcon || op == tCrossIcon || op == tBoxIcon))
+            (op == tStore && type2 != TYPE_VARIABLE)
         ) {
             return E_SYNTAX;
         }
         
         // If we can swap the arguments, we have less possibilities
-        if (op == tLE || op == tLT || (operatorCanSwap[operatorIndex] && (type1 <= TYPE_FLOAT || type2 == TYPE_CHAIN_ANS))) {
+        if (op == tLE || op == tLT || (canSwap && (type1 <= TYPE_FLOAT || type2 == TYPE_CHAIN_ANS))) {
             OperatorsSwap();
         }
         
@@ -244,7 +249,7 @@ uint8_t compileOperator(uint24_t index) {
             operatorIndex = getIndexOfOperator(tGE);
         }
         
-        (*operatorsPointers[operatorIndex * 9 + (type1 - 1) * 3 + type2 - 1])();
+        (*operatorsPointers[operatorIndex * 9 + type1 * 3 + type2 - 4])();
         
         if (op == tDiv) {
             CALL(__idvrmu);
@@ -277,7 +282,7 @@ void OperatorsSwap(void) {
     
     temp = type1;
     type1 = type2;
-    type2 = type1;
+    type2 = temp;
     
     temp2 = operand1;
     operand1 = operand2;

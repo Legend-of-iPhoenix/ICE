@@ -65,7 +65,7 @@ int main(int argc, char **argv) {
 
     // Check for icon and description before putting the C functions in the output program
     preScanProgram();
-    if ((res = getNameIconDescription()) != VALID || (res = parsePrescan())) {
+    if ((res = getNameIconDescription()) != VALID || (res = parsePrescan()) != VALID) {
         displayError(res);
         goto stop;
     }
