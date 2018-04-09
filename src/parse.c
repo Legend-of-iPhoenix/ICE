@@ -11,6 +11,7 @@
 #include "prescan.h"
 
 bool isFloatExpression;
+uint16_t lineOffset = 0;
 static bool inExpression = false;
 static bool inFunction = false;
 static bool canUseMask = true;
@@ -84,6 +85,7 @@ uint8_t ParseUntilEnd(void) {
         if ((ret = (*tokenPointers[token])(token)) != VALID || returnToken) {
             return ret;
         }
+        lineOffset++;
     }
     
     // Parse the last expression
@@ -495,6 +497,7 @@ uint8_t ParseNewLine(uint8_t tok) {
     // Reset some standard variables
     inExpression = inFunction = false;
     allowExpression = true;
+    lineOffset = 0;
     
     return VALID;
 }
@@ -621,6 +624,20 @@ void OptimizeExpression(void) {
                     
                     continue;
                 }
+            }
+        }
+        
+        // Check for ... | 0/1 | and/or/xor
+        if (outputPrev.type <= TYPE_FLOAT && outputCurr.type == TYPE_OPERATOR) {
+            if ((outputPrev.operand.num && outputCurr.operand.op.type == tAnd) ||
+                (!outputPrev.operand.num && outputCurr.operand.op.type == tOr) ||
+                (!outputPrev.operand.num && outputCurr.operand.op.type == tXor)
+            ) {
+                removeOutputElement(index - 1);
+                removeOutputElement(index);
+                index -= 2;
+                
+                continue;
             }
         }
     }

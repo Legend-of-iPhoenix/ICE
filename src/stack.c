@@ -14,12 +14,14 @@ uint24_t outputElements;
 uint24_t stackElements;
 static element_t outputStack[500];
 static element_t stack[250];
+extern uint16_t lineOffset;
 
 void clearStacks(void) {
     outputElements = stackElements = 0;
 }
 
 void outputStackPush(element_t newEntry) {
+    newEntry.lineOffset = lineOffset;
     outputStack[outputElements++] = newEntry;
 }
 
@@ -32,6 +34,7 @@ element_t getOutputElement(uint24_t index) {
 }
 
 void setOutputElement(element_t newEntry, uint24_t index) {
+    newEntry.lineOffset = lineOffset;
     outputStack[index] = newEntry;
 }
 
@@ -43,6 +46,7 @@ void removeOutputElement(uint24_t index) {
 }
 
 void stackPush(element_t newEntry) {
+    newEntry.lineOffset = lineOffset;
     stack[stackElements++] = newEntry;
 }
 

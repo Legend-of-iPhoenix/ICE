@@ -29,9 +29,10 @@ typedef union {
 } operand_t;
  
 typedef struct {
-    bool needRelocate;
-    bool allowStoreTo;
-    uint8_t type;
+    bool      needRelocate;
+    bool      allowStoreTo;
+    uint8_t   type;
+    uint16_t  lineOffset;
     operand_t operand;
 } element_t;
 
