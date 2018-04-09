@@ -4,7 +4,7 @@
 ICE Compiler is a program that compiles TI-BASIC-like language to assembler. Create insane games, take full advanage of the color screen, and close the gap to using other languages! Not only will your Basic programs enjoy increased speed, it is also easy to use. Type your program in the normal editor, compile within seconds, for hours of fun! No shell is required.
 
 ## Download
-See the [Cemetech Archives](https://www.cemetech.net/programs/index.php?mode=file&path=/84pce/asm/programs/ICECompiler.zip) for the latest download and documentation.
+See the [Cemetech Archives](https://www.cemetech.net/programs/index.php?mode=file&id=1481) for the latest download and documentation.
 
 ### Usage
 #### Calculator
@@ -14,4 +14,4 @@ Run `Asm(prgmICE` from the homescreen. This will show a list of compilable progr
 From the command line, run `ice <input program>` to compile the input programs. Note that if you want to compile subprograms too, put them in the same folder as `ice.exe`, so preferable put `ice.exe` in the same folder as all your input programs.
 
 ### Bugs
-If you find a bug, or if you see the message `ICE ERROR: please report it!`, be sure to make an issue here, or post it on the relevant [Cemetech topic](https://www.cemetech.net/forum/viewtopic.php?t=12616).
+If you find a bug, or if you see the message `ICE ERROR: please report it!`, be sure to make an issue here, or post it in the relevant [Cemetech topic](https://www.cemetech.net/forum/viewtopic.php?t=12616).

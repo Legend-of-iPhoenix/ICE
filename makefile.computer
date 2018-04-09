@@ -6,6 +6,7 @@ SOURCES := $(wildcard src/*.c)
 ASMSOURCES := $(wildcard src/asm/*.asm)
 ASMSOURCES := $(filter-out src/asm/editor.asm, $(ASMSOURCES))
 ASMSOURCES := $(filter-out src/asm/mult_with_number.asm, $(ASMSOURCES))
+ASMSOURCES := $(filter-out src/asm/runprogram.asm, $(ASMSOURCES))
 
 ifeq ($(OS),Windows_NT)
 NATIVEPATH = $(subst /,\,$(1))
