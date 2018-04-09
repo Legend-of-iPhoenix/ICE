@@ -5,10 +5,10 @@ format ti appvar 'ICEAPPV'
 
 repeat 3
 	macro r#% inst&
-		inst
 		local pc
 		pc := $
-		token_table#% equ pc - 3
+		token_table#% equ pc
+		inst
 	end macro
 end repeat
 
@@ -19,6 +19,8 @@ AMOUNT_OF_FILEIOC_FUNCTIONS = 24
 SQUARE_WIDTH = 18
 SQUARE_HEIGHT = 13
 SQUARES_START_POS = 30
+
+org 0
 
 KeyHook_start:
 	db	83h
@@ -704,7 +706,7 @@ GraphxFunctionsPointers:
 	end irpv
 	
 CustomTokensPointers:
-	irpv token, token_table2
+	irpv token, token_table3
 		dl token
 	end irpv
 
