@@ -551,7 +551,7 @@ uint8_t ParseExpression(void) {
             uint8_t functionIndex = outputCurr.operand.func.index;
             uint8_t amountOfArgs = outputCurr.operand.func.amountOfArgs;
             
-            if (index < amountOfArgs || (functions[functionIndex].amountOfArgs != -1 && functions[functionIndex].amountOfArgs != amountOfArgs)) {
+            if (index < amountOfArgs || (functions[functionIndex].amountOfArgs != 255 && functions[functionIndex].amountOfArgs != amountOfArgs)) {
                 return E_ARGUMENTS;
             }
         } else if (outputCurr.type == TYPE_FUNCTION_START) {
@@ -629,10 +629,10 @@ void OptimizeExpression(void) {
         
         // Check for ... | 0/1 | and/or/xor
         if (outputPrev.type <= TYPE_FLOAT && outputCurr.type == TYPE_OPERATOR) {
-            if ((outputPrev.operand.num && outputCurr.operand.op.type == tAnd) ||
-                (!outputPrev.operand.num && outputCurr.operand.op.type == tOr) ||
-                (!outputPrev.operand.num && outputCurr.operand.op.type == tXor)
-            ) {
+            float num = outputPrev.operand.num;
+            uint8_t op = outputCurr.operand.op.type;
+            
+            if ((num && op == tAnd) || (!num && op == tOr) || (!num && op == tXor)) {
                 removeOutputElement(index - 1);
                 removeOutputElement(index);
                 index -= 2;

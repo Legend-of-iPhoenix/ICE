@@ -185,25 +185,25 @@ void ChangeRegValue(uint24_t inValue, uint24_t outValue, uint8_t opcodes[7]) {
                 output(uint8_t, opcodes[1]);
                 expr.SizeOfOutputNumber++;
             }
-        } else if (inValue < 256 && outValue < 512) {
-            if (outValue > 255) {
+        } else if (inValue < 0x100 && outValue < 200) {
+            if (outValue > 0xFF) {
                 output(uint8_t, opcodes[2]);
                 expr.SizeOfOutputNumber = 1;
             }
-            if (inValue != (outValue & 255)) {
+            if (inValue != (outValue & 0xFF)) {
                 output(uint8_t, opcodes[4]);
                 output(uint8_t, outValue);
                 expr.SizeOfOutputNumber += 2;
             }
-        } else if (inValue < 512 && outValue < 256) {
+        } else if (inValue < 0x200 && outValue < 0x100) {
             output(uint8_t, opcodes[3]);
             expr.SizeOfOutputNumber = 1;
-            if ((inValue & 255) != outValue) {
+            if ((inValue & 0xFF) != outValue) {
                 output(uint8_t, opcodes[4]);
                 output(uint8_t, outValue);
                 expr.SizeOfOutputNumber = 3;
             }
-        } else if (inValue < 65536 && outValue < 65536 && (inValue & 255) == (outValue & 255)) {
+        } else if (inValue < 0x10000 & outValue < 0x10000 && (inValue & 0xFF) == (outValue & 0xFF)) {
             output(uint8_t, opcodes[5]);
             output(uint8_t, outValue >> 8);
             expr.SizeOfOutputNumber = 2;

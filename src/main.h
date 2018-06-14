@@ -49,7 +49,7 @@ typedef struct {
     uint8_t type;
     uint8_t amountOfDependancies;
     uint8_t *dependancies;
-    char offset;
+    char    offset;
     char    name[21];
 } variable_t;
 
@@ -62,21 +62,16 @@ typedef struct {
     uint8_t  *programPtr;                                   // Pointer to the program
     uint8_t  *programPtrBackup;                             // Same as above
     uint8_t  *programDataPtr;                               // Pointer to the program data
-    uint8_t  tempToken;                                     // Used for functions, i.e. For(, where an argument can stop with either a comma or a parentheses
-    uint8_t  stackDepth;                                    // Used for compiling arguments of C functions
     
     label_t  *LblStack;                                     // Pointer to label stack
     label_t  *GotoStack;                                    // Pointer to goto stack
 
     uint24_t *dataOffsetStack[1000];                        // Stack of the address to point to the data, which needs to be changed after compiling
     uint24_t dataOffsetElements;                            // Amount of stack elements of above
-    uint24_t dataOffsetElementsBackup;                      // Same as above
     uint24_t *ForLoopSMCStack[100];                         // Used for SMC in For loops
     uint24_t ForLoopSMCElements;                            // Amount of elements in above stack
     uint24_t currentLine;                                   // The amount of parsed lines, useful for displaying it when an error occurs
     uint24_t programSize;                                   // Size of the output program
-    uint24_t *stack[STACK_SIZE*5];                          // Stacks for compiling arguments
-    uint24_t *stackStart;                                   // Start of the stack
     uint24_t programLength;                                 // Size of input program
     uint24_t curLbl;                                        // Current label index
     uint24_t curGoto;                                       // Current goto index
@@ -185,7 +180,6 @@ typedef struct {
     bool     BCIsVariable;
     bool     AIsNumber;
     bool     AIsVariable;
-    bool     tempBool;
     bool     allowedToOptimize;
 
     uint8_t  HLVariable;
@@ -193,12 +187,10 @@ typedef struct {
     uint8_t  BCVariable;
     uint8_t  AValue;
     uint8_t  AVariable;
-    uint8_t  tempVariable;
 
     uint24_t HLValue;
     uint24_t DEValue;
     uint24_t BCValue;
-    uint24_t tempValue;
 } reg_t;
 
 typedef struct {
